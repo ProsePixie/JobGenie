@@ -176,7 +176,7 @@ def e(text):
 def display_url(url):
     """Readable form for the page. The href keeps the full URL.
 
-    "linkedin.com/in/jeremiah-grother" reads better than the https://www.
+    "linkedin.com/in/jane-doe" reads better than the https://www.
     version and takes less of a contact line that is already crowded.
     """
     return re.sub(r"^https?://(www\.)?", "", url).rstrip("/")

@@ -63,9 +63,9 @@ h1 {
 .contact a {
   color: #1a1a1a;
   text-decoration: none;
-  /* Never break a URL across lines. Chrome wraps "jeremiah-grother" at the
+  /* Never break a URL across lines. Chrome wraps "jane-doe" at the
    * hyphen, and pdftotext then strips it as a hyphenation artifact, so the
-   * text layer records linkedin.com/in/jeremiahgrother, which is a real URL
+   * text layer records linkedin.com/in/janedoe, which is a real URL
    * belonging to nobody. The line wraps between items instead. */
   white-space: nowrap;
 }

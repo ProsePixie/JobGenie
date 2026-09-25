@@ -395,7 +395,7 @@ def safe_filename(text, fallback="cv"):
     Application folder names go through safe_slug and lowercase is fine there;
     they are internal ids. A CV basename is what they see on the Render tab and
     what ends up as the visible file name, and "Jane_Doe_CV" silently
-    becoming "jeremiah_grother_cv.pdf" is the kind of small mismatch that reads
+    becoming "jane_doe_cv.pdf" is the kind of small mismatch that reads
     as the tool being broken even though nothing failed.
     """
     keep = re.sub(r"[^A-Za-z0-9._-]+", "_", text or "").strip("_")

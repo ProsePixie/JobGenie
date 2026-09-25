@@ -184,7 +184,7 @@ def check_compounds(text, findings):
     A line break falling on a hyphen makes pdftotext drop it, so
     "Enablement-Programm" extracts as "EnablementProgramm" and a parser indexes
     a word that does not exist. This is the same failure that once turned a
-    LinkedIn URL into linkedin.com/in/jeremiahgrother.
+    LinkedIn URL into linkedin.com/in/janedoe.
 
     Checked against the source rather than by pattern, because the obvious
     heuristic of a lowercase letter followed by a capital would flag every
