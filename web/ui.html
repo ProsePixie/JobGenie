@@ -57,7 +57,7 @@ nav button.on { background:var(--brand); border-color:var(--brand); color:var(--
           position:sticky; top:0; z-index:5; }
 .topbar h1 { font-size:16px; margin:0; letter-spacing:-.2px; }
 .topbar p { margin:2px 0 0; color:var(--muted); font-size:12.5px; }
-main { padding:20px 26px; max-width:1180px; }
+main { padding:20px 26px; }
 section { display:none; }
 section.on { display:block; }
 #menuToggle { display:none; }
@@ -105,6 +105,11 @@ td { padding:6px 8px 6px 0; border-bottom:1px solid var(--line); vertical-align:
         border:1px solid var(--line); color:var(--muted); }
 .pill.ok { color:var(--ok); border-color:var(--ok); }
 .docbadge { cursor:pointer; text-decoration:underline; }
+.archive { margin-top:12px; }
+.archive summary { cursor:pointer; }
+.archive.over { outline:2px dashed var(--brand); }
+.arow { padding:4px 6px; border-bottom:1px solid var(--line); font-size:12.5px; cursor:pointer; }
+.arow:hover { background:var(--panel2); }
 .docbtn { padding:4px 10px; margin:2px 4px 2px 0; }
 .viewer { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50; display:flex; }
 .viewer-box { margin:3vh auto; width:min(1100px,94vw); height:94vh; background:var(--panel);
@@ -128,14 +133,19 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
 .flash.bad { background:rgba(176,57,46,.12); color:var(--accent); }
 
 /* pipeline board */
-.board { display:flex; gap:10px; overflow-x:auto; padding-bottom:8px; align-items:flex-start; }
-.col { flex:0 0 232px; background:var(--panel); border:1px solid var(--line);
+/* Every column on screen at once: they share the width and shrink to fit, so
+   the whole pipeline is visible without scrolling sideways. Only a narrow
+   window falls back to scrolling. */
+.board { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr);
+         gap:8px; padding-bottom:8px; align-items:start; }
+@media (max-width:1000px){ .board { display:flex; overflow-x:auto; } .board .col { flex:0 0 200px; } }
+.col { min-width:0; background:var(--panel); border:1px solid var(--line);
        border-radius:10px; padding:9px; min-height:110px; transition:border-color .12s; }
 .col.over { border-color:var(--accent); border-style:dashed; }
 .col h3 { margin:0 0 8px; font-size:11px; text-transform:uppercase; letter-spacing:.6px;
           color:var(--muted); display:flex; justify-content:space-between; }
 .col h3 b { color:var(--ink); font-weight:700; }
-.jc { background:var(--bg); border:1px solid var(--line); border-left:3px solid var(--line);
+.jc { overflow-wrap:break-word; hyphens:auto; background:var(--bg); border:1px solid var(--line); border-left:3px solid var(--line);
       border-radius:8px; padding:8px 9px; margin-bottom:7px; cursor:grab; }
 .jc:active { cursor:grabbing; }
 .jc.sel { border-color:var(--accent); }
@@ -164,8 +174,10 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
                  font-variant-numeric:tabular-nums; }
 
 /* ---- Build panel (plans/cv-builder.md) ---- */
-.bwrap { display:grid; grid-template-columns:minmax(360px,1fr) minmax(420px,1.1fr); gap:16px;
+.bwrap { display:grid; grid-template-columns:minmax(380px,1fr) minmax(460px,1fr); gap:16px;
          align-items:start; }
+/* The preview stays in view while the controls beside it scroll. */
+.bwrap > :last-child { position:sticky; top:12px; }
 @media (max-width:1100px){ .bwrap { grid-template-columns:1fr; } }
 .bhead { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
 .bhead h2 { margin:0 12px 0 0; font-size:17px; text-transform:none; letter-spacing:-.2px; color:var(--ink); }
@@ -197,7 +209,7 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
 .bline .ovr { color:var(--warn); font-size:10.5px; }
 .req { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:4px 0; }
 .req .pill { flex:0 0 auto; }
-.pframe { width:100%; height:78vh; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.pframe { width:100%; height:calc(100vh - 120px); min-height:520px; border:1px solid var(--line); border-radius:8px; background:#fff; }
 .pbar { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
 </style>
 </head>
@@ -337,6 +349,11 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
      Moving to Sent, Responded or Interviewing marks it as applied.</p>
   <div id="bflash" class="flash"></div>
   <div class="board" id="board"></div>
+  <details class="card archive" id="archive">
+    <summary><b>Archive</b> <span id="archiveCount" class="pill"></span>
+      <span class="muted small">closed applications: kept whole for learning, shown one line each. Drop a card here to close it.</span></summary>
+    <div id="archiveList"></div>
+  </details>
   <div class="detail card" id="detail" style="display:none"></div>
 </section>
 
@@ -861,7 +878,10 @@ function stageClass(stage){
 async function loadPipe(){
   PIPE = await get('/api/pipeline');
   const board = $('#board'); board.innerHTML = '';
-  PIPE.stages.forEach(st => {
+  // Closed is not a column: it goes to the Archive below, one line each.
+  // The entries stay whole in the pipeline for the learning loop.
+  renderArchive(PIPE.entries.filter(e => e.stage === 'closed'));
+  PIPE.stages.filter(st => st !== 'closed').forEach(st => {
     const items = PIPE.entries.filter(e => e.stage === st);
     const col = el('div','col');
     col.dataset.stage = st;
@@ -907,6 +927,34 @@ async function loadPipe(){
       loadStatus(); loadToday();
     });
     board.append(col);
+  });
+}
+
+function renderArchive(items){
+  const when = e => e.outcome_date || e.updated || e.date || '';
+  items.sort((a, b) => when(b).localeCompare(when(a)));
+  $('#archiveCount').textContent = items.length;
+  $('#archiveList').innerHTML = items.length ? items.map(e =>
+    '<div class="arow" data-id="'+esc(e.id)+'"><span class="muted">'+esc(when(e).slice(0,10))+'</span> '
+    + '<b>'+esc(e.company)+'</b> '+esc(e.role)
+    + (e.outcome && e.outcome !== 'pending' ? ' <span class="'+cls(e.outcome)+'">'+esc(e.outcome)+'</span>' : '')
+    + (e.score != null ? ' <span class="muted">fit '+e.score+'</span>' : '') + '</div>').join('')
+    : '<p class="muted small">Nothing closed yet.</p>';
+  $('#archiveList').querySelectorAll('.arow').forEach(r =>
+    r.onclick = () => { SEL = r.dataset.id; showDetail(r.dataset.id); loadPipe(); });
+}
+{
+  const arch = document.getElementById('archive');
+  arch.addEventListener('dragover', ev => { ev.preventDefault(); arch.classList.add('over'); });
+  arch.addEventListener('dragleave', () => arch.classList.remove('over'));
+  arch.addEventListener('drop', async ev => {
+    ev.preventDefault(); arch.classList.remove('over');
+    const id = ev.dataTransfer.getData('text/plain');
+    if (!id) return;
+    const r = await post('/api/pipeline/update', {id, patch:{stage: 'closed'}});
+    if (r && r.ok === false) flash('#bflash', r.err || 'could not close that', false);
+    await loadPipe(); if (SEL === id) showDetail(id);
+    loadStatus(); loadToday();
   });
 }
 
@@ -2005,7 +2053,8 @@ $('#bFit').onclick = async () => {
 };
 $('#bPackage').onclick = async () => {
   const btn = $('#bPackage'); btn.disabled = true; btn.textContent = 'Packaging...';
-  const r = await post('/api/package', {slug: B.slug, merge: true});
+  // Separate files: most portals ask for the CV and the letter as two uploads.
+  const r = await post('/api/package', {slug: B.slug});
   btn.disabled = false; btn.textContent = 'Package for sending';
   const out = $('#bSendOut'); out.style.display = '';
   out.textContent = (r.problems || []).map(p => 'REFUSED  ' + p)

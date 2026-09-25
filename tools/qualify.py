@@ -169,7 +169,16 @@ def score_entry(server, entry, ctx=None):
     posting = server.saved_posting(server.app_dir(entry["id"]))
     if not posting:
         return None
-    return qualify(posting, entry.get("role", ""), ctx=ctx, weights=server_weights(server))
+    res = qualify(posting, entry.get("role", ""), ctx=ctx, weights=server_weights(server))
+    # Which posting this score is for, so a changed or newly added posting is
+    # noticed and rescored (server.score_stale).
+    res["posting_mtime"] = posting_mtime(server, entry)
+    return res
+
+
+def posting_mtime(server, entry):
+    p = server.app_dir(entry["id"]) / "posting.txt"
+    return int(p.stat().st_mtime) if p.exists() else None
 
 
 def server_weights(server):

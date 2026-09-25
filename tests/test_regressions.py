@@ -449,5 +449,99 @@ class ChromeDiscovery(unittest.TestCase):
             self.assertEqual(render.find_chrome(), __file__)
 
 
+class DraftedStage(unittest.TestCase):
+    """Finishing a CV moves the card to Drafted, forward only (2026-09-25: the
+    Drafted column stayed empty after a morning of finalized, packaged CVs)."""
+
+    def test_forward_only(self):
+        for stage, want in (("found", "drafted"), ("screened", "drafted"), ("scored", "drafted"),
+                            ("drafted", "drafted"), ("sent", "sent"), ("interviewing", "interviewing")):
+            e = {"stage": stage, "outcome": "pending"}
+            server.promote_to_drafted(e)
+            self.assertEqual(e["stage"], want, stage)
+        closed = {"stage": "scored", "outcome": "skipped"}
+        self.assertFalse(server.promote_to_drafted(closed))
+
+    def test_finalize_moves_the_card(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / "acme"
+            folder.mkdir()
+            pdf = folder / "cv.pdf"
+            pdf.write_bytes(b"%PDF")
+            store = [{"id": "acme", "company": "Acme", "role": "R", "stage": "scored",
+                      "outcome": "pending"}]
+            B = mock.Mock()
+            B.validate.return_value = []
+            B.build.return_value = {"ok": True, "pdf": str(pdf), "max_pages": 2}
+            B.lead_of.return_value = "enablement"
+            spec = {"base": "professional", "lang": "en", "dials": {"enablement": "lead"}}
+            with mock.patch.object(server, "_builder", lambda: (B, mock.Mock())), \
+                    mock.patch.object(server, "_build_entry", lambda body: store[0]), \
+                    mock.patch.object(server, "_build_ctx", lambda B, e: {"career": {}}), \
+                    mock.patch.object(server, "app_dir", lambda eid: folder), \
+                    mock.patch.object(server, "_posting_for", lambda e: (None, None)), \
+                    mock.patch.object(server, "load_pipeline", lambda: store), \
+                    mock.patch.object(server, "save_pipeline", lambda es: None), \
+                    mock.patch.object(server, "run", lambda cmd, **kw: {"ok": True, "code": 0,
+                                                                        "out": "", "err": ""}), \
+                    mock.patch.object(server, "sync_to_desktop", lambda *a: "copied"):
+                server.api_build_finalize({"id": "acme", "spec": spec})
+        self.assertEqual(store[0]["stage"], "drafted")
+
+    def test_catch_up_at_start(self):
+        with tempfile.TemporaryDirectory() as d:
+            apps = Path(d)
+            (apps / "packaged" / "submit").mkdir(parents=True)
+            store = [
+                {"id": "built", "stage": "scored", "outcome": "pending", "build": {"date": "x"}},
+                {"id": "packaged", "stage": "screened", "outcome": "pending"},
+                {"id": "untouched", "stage": "scored", "outcome": "pending"},
+                {"id": "sent", "stage": "sent", "outcome": "pending", "build": {"date": "x"}},
+            ]
+            with mock.patch.object(server, "load_pipeline", lambda: store), \
+                    mock.patch.object(server, "save_pipeline", lambda es: None), \
+                    mock.patch.object(server, "app_dir", lambda eid: apps / eid), \
+                    mock.patch.object(server, "APP_LOG", apps / "log.txt"):
+                moved = server.catch_up_drafted()
+        self.assertEqual(sorted(moved), ["built", "packaged"])
+        self.assertEqual([e["stage"] for e in store], ["drafted", "drafted", "scored", "sent"])
+
+
+class ScoreEverything(unittest.TestCase):
+    """A posting saved any way at all gets scored (2026-09-25: one written by a
+    Claude Code session was never scored, because scoring ran only on save)."""
+
+    def test_stale_and_unscored_postings_are_rescored(self):
+        with tempfile.TemporaryDirectory() as d:
+            apps = Path(d)
+            for eid in ("new", "same", "changed", "closed", "nopost"):
+                (apps / eid).mkdir()
+                if eid != "nopost":
+                    (apps / eid / "posting.txt").write_text("x" * 300)
+            mt = int((apps / "same" / "posting.txt").stat().st_mtime)
+            store = [
+                {"id": "new", "stage": "found", "outcome": "pending"},
+                {"id": "same", "stage": "scored", "outcome": "pending",
+                 "qualification": {"score": 50, "posting_mtime": mt}},
+                {"id": "changed", "stage": "scored", "outcome": "pending",
+                 "qualification": {"score": 50, "posting_mtime": mt - 100}},
+                {"id": "closed", "stage": "closed", "outcome": "skipped"},
+                {"id": "nopost", "stage": "found", "outcome": "pending"},
+            ]
+            scored = []
+            with mock.patch.object(server, "load_pipeline", lambda: store), \
+                    mock.patch.object(server, "app_dir", lambda eid: apps / eid), \
+                    mock.patch.object(server, "requalify", scored.append), \
+                    mock.patch.object(server, "APP_LOG", apps / "log.txt"):
+                server.score_stale()
+        self.assertEqual(sorted(scored), ["changed", "new"])
+
+    def test_benefits_headings_are_not_requirements(self):
+        for heading in ("🌱 Growing together - what you can expect at voize", "Benefits:",
+                        "Why you'll love working here", "Das erwartet dich bei uns"):
+            self.assertEqual(server._heading(heading), "perks", heading)
+        self.assertEqual(server._heading("Your profile"), "req")
+
+
 if __name__ == "__main__":
     unittest.main()

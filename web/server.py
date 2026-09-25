@@ -321,6 +321,64 @@ def requalify(entry_id):
         return None
 
 
+_BACKGROUND = threading.Lock()
+
+
+def score_stale():
+    """Score every open entry whose posting is new or changed since its last
+    score. Scoring used to run only when a posting was saved through the app,
+    so one written any other way (a Claude Code session, an older version) was
+    never scored."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import qualify  # noqa: E402
+    todo = []
+    for e in load_pipeline():
+        if infer_stage(e) == "closed" or not saved_posting(app_dir(e["id"])):
+            continue
+        q = e.get("qualification") or {}
+        if not q or q.get("posting_mtime") != qualify.posting_mtime(sys.modules[__name__], e):
+            todo.append(e["id"])
+    for eid in todo:
+        requalify(eid)
+    if todo:
+        app_log("ok", "Scored postings", "%d card(s)" % len(todo))
+    return todo
+
+
+def fetch_missing_postings(limit=40):
+    """Fetch the posting for open entries that have only a link, so they can be
+    scored and built. One at a time; each result is logged. Only the entry's own
+    link is fetched, never a URL found inside a posting (hard rule 3)."""
+    done = []
+    for e in load_pipeline():
+        if len(done) >= limit:
+            break
+        if (infer_stage(e) == "closed" or not (e.get("url") or "").startswith("http")
+                or saved_posting(app_dir(e["id"])) or e["id"] in _POSTING_FAILED):
+            continue
+        text, note = fetch_and_save_posting(e)
+        if not text:
+            _POSTING_FAILED[e["id"]] = (time.time(), note)
+        app_log("ok" if text else "FAILED", "Fetch posting", e["id"],
+                "" if text else note)
+        done.append(e["id"])
+    return done
+
+
+def background_scoring(fetch=True):
+    """Fetch what is missing, then score what is stale. One run at a time."""
+    if not _BACKGROUND.acquire(blocking=False):
+        return
+    try:
+        if fetch:
+            fetch_missing_postings()
+        score_stale()
+    except Exception as exc:  # noqa: BLE001 - never take the server down
+        app_log("ERROR", "Background scoring", "", "%s: %s" % (type(exc).__name__, exc))
+    finally:
+        _BACKGROUND.release()
+
+
 def api_qualify(body):
     """Recompute and return one entry's score and its breakdown."""
     res = requalify(body.get("id"))
@@ -430,6 +488,38 @@ def entry_id(entry):
                        safe_slug(entry.get("role"), "role"))
 
 
+# Before Drafted: a finalized CV that passed its checks, or a packaged set, moves a
+# card here. Nothing did. Every card the Build panel finished stayed in Scored,
+# and the Drafted column was empty however much had been drafted. Never backwards:
+# a card already sent, answered or closed stays where it is.
+EARLY_STAGES = ("found", "screened", "scored")
+
+
+def promote_to_drafted(entry):
+    """Move one entry to Drafted if it is still before it. True when it moved."""
+    outcome = (entry.get("outcome") or "").lower().strip()
+    if entry.get("stage") in EARLY_STAGES and outcome not in TERMINAL:
+        entry["stage"] = "drafted"
+        return True
+    return False
+
+
+def catch_up_drafted():
+    """At start-up: cards finished before promote_to_drafted existed. A card has
+    been drafted when Finalize recorded its `build`, or when it was packaged
+    (submit/ exists). Each move is written to the app log."""
+    with PIPELINE_LOCK:
+        entries = load_pipeline()
+        moved = [e for e in entries
+                 if (e.get("build") or (app_dir(e["id"]) / "submit").is_dir())
+                 and promote_to_drafted(e)]
+        if moved:
+            save_pipeline(entries)
+    for e in moved:
+        app_log("ok", "Moved to Drafted", e["id"], "a finalized CV or package already existed")
+    return [e["id"] for e in moved]
+
+
 def infer_stage(entry):
     """Place a legacy entry on the board without rewriting the file to read it.
 
@@ -498,6 +588,9 @@ def save_pipeline(entries):
 
 
 def api_pipeline():
+    # A posting added since the last look is scored in the background; the next
+    # refresh shows it.
+    threading.Thread(target=background_scoring, kwargs={"fetch": False}, daemon=True).start()
     entries = load_pipeline()
     # Which documents exist, for the CV / Letter badges on each card.
     for e in entries:
@@ -1461,6 +1554,11 @@ def api_package(body):
     sys.path.insert(0, str(ROOT / "tools"))
     import package  # noqa: E402
     written, problems, warnings = package.build(slug, merge=bool(body.get("merge")))
+    if not problems:
+        with PIPELINE_LOCK:
+            entries = load_pipeline()
+            if any(promote_to_drafted(e) for e in entries if app_dir(e["id"]).name == slug):
+                save_pipeline(entries)
     if problems:
         return {"ok": False, "problems": problems, "warnings": warnings}
     for path in written:
@@ -1586,8 +1684,12 @@ BENEFITS = re.compile(
     r"(gefallen|wir bieten|was wir bieten|bieten wir|deine vorteile|ihre vorteile|"
     r"benefits|we offer|what we offer|perks|why join|our offer|in it for you|"
     r"unser angebot|das bieten wir|berufliche zukunft|deine zukunft|ihre zukunft|"
-    r"what you get|what's in it|darauf kannst du dich freuen|deine benefits|ihre benefits)"
-    r"\s*[:?]?\s*$", re.I)
+    r"what you get|what's in it|darauf kannst du dich freuen|deine benefits|ihre benefits|"
+    # Anywhere in the (short) heading, not only the whole line: "Growing together -
+    # what you can expect at voize" was read as a requirements list, and its team
+    # events and stock options counted as gaps against the score.
+    r"what you can expect|what to expect|why you.{0,3}ll love|life at|growing together|"
+    r"our culture|what we give|was dich bei uns erwartet|das erwartet dich bei uns)", re.I)
 
 
 # Section headings. Lines under a requirements heading are what the posting
@@ -1620,10 +1722,12 @@ def _heading(line):
         return None
     if REQ_HEADING.search(bare):
         return "req"
-    if TASK_HEADING.search(bare):
-        return "task"
+    # Benefits before tasks: "Das erwartet dich" is the tasks, "Das erwartet dich
+    # bei uns" the benefits, and the tasks pattern matched both.
     if BENEFITS.search(bare):
         return "perks"
+    if TASK_HEADING.search(bare):
+        return "task"
     return "other" if line.strip().endswith(":") else None
 
 
@@ -2323,6 +2427,7 @@ def api_build_finalize(body):
                                   "dials": {k: v for k, v in spec["dials"].items() if v != "off"},
                                   "bullets": result.get("shown_bullets", []),
                                   "date": datetime.date.today().isoformat()}
+                    promote_to_drafted(e)
             save_pipeline(entries)
     result["ok"] = bool(result.get("ok")) and result.get("ats_ok") is not False
     return result
@@ -2871,6 +2976,8 @@ def main():
 
     url = "http://127.0.0.1:%d/" % port
     app_log("start", "App started", url)
+    catch_up_drafted()
+    threading.Thread(target=background_scoring, daemon=True).start()
     print("Job search UI")
     print("  %s" % url)
     print("  project: %s" % ROOT)

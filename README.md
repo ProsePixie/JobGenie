@@ -36,12 +36,12 @@ cannot survive. JobGenie is built the other way round:
 
 | | |
 |---|---|
-| **Pipeline board** | Every opportunity as a card, from found to closed, with a readable log of what the app did |
-| **Qualification score** | 0-100 per posting, every point explained: requirements covered, in your data, or a gap |
+| **Pipeline board** | Every opportunity as a card, found to interviewing, all on one screen; finished CVs move to Drafted on their own; closed ones go to a one-line Archive kept for learning; a readable log of what the app did |
+| **Qualification score** | 0-100 per posting, computed in the background for every card (postings are fetched from each card's link), every point explained: requirements covered, in your data, or a gap |
 | **Build panel** | Suggested base and threads with reasons, every bullet tickable, live preview, requirement coverage |
 | **Checks** | Text layer, page count, chronology, substance, banned phrases, unsupported claims |
 | **Letters** | Drafted by Claude from what your data supports, then checked the same way |
-| **Package** | Named files (`Jane_Doe_CV.pdf`) and one merged PDF, refused if any check fails |
+| **Package** | Separate named files (`Jane_Doe_CV.pdf`, `Jane_Doe_Cover_Letter.pdf`), refused if any check fails; one merged PDF on request for single-upload portals |
 | **Scout** | Polls company job boards (Greenhouse, Lever, Ashby and others) for matching roles |
 | **Skills** | `/fit`, `/apply`, `/scout`, `/warm`, `/prep`, `/outcome`, `/evidence` inside Claude Code |
 
@@ -65,7 +65,7 @@ And a readable log of everything the app did:
 
 ## Quick start
 
-Needs Python 3.10+, Chrome or Edge, and poppler (`pdftotext`, `pdfunite`). No pip installs.
+Needs Python 3.10+, Chrome or Edge, and poppler (`pdftotext`; `pdfunite` only for a merged PDF). No pip installs.
 
 ```bash
 git clone https://github.com/ProsePixie/JobGenie && cd JobGenie
