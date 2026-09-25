@@ -1,6 +1,6 @@
 """Fast regression tests: no Chrome, no network, no real data changed.
 
-    py -m unittest discover tests
+    python3 -m unittest discover tests
 
 tools/smoke_test.py proves the whole render path works; these pin the
 matchers and gates that kept regressing. Most of STATUS.md's "do not
@@ -541,6 +541,100 @@ class ScoreEverything(unittest.TestCase):
                         "Why you'll love working here", "Das erwartet dich bei uns"):
             self.assertEqual(server._heading(heading), "perks", heading)
         self.assertEqual(server._heading("Your profile"), "req")
+
+
+class SetupTools(unittest.TestCase):
+    """The tools /setup runs: none of them may write a fact the user did not confirm."""
+
+    def test_new_profile_is_blank_and_never_overwrites(self):
+        import new_profile
+        with tempfile.TemporaryDirectory() as d:
+            prof = Path(d) / "profile"
+            new_profile.create(ROOT / "profile.example", prof)
+            career = json.loads((prof / "career.json").read_text())
+            self.assertEqual(career["roles"], [])
+            self.assertEqual(career["identity"]["name"], "TODO")
+            self.assertNotIn("Jane", (prof / "career.json").read_text())
+            self.assertTrue((prof / "private" / "leak-terms.txt").exists())
+            with self.assertRaises(FileExistsError):
+                new_profile.create(ROOT / "profile.example", prof)
+
+    def test_docx_import_keeps_paragraphs_and_list_items(self):
+        import import_cv
+        import zipfile
+        w = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+        body = ('<w:p><w:r><w:t>Jane Doe</w:t></w:r></w:p>'
+                '<w:p><w:pPr><w:numPr/></w:pPr><w:r><w:t>Built a thing.</w:t></w:r></w:p>')
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "cv.docx"
+            with zipfile.ZipFile(f, "w") as z:
+                z.writestr("word/document.xml", '<w:document %s><w:body>%s</w:body></w:document>'
+                           % (w, body))
+            self.assertEqual(import_cv.extract(f).splitlines(), ["Jane Doe", "- Built a thing."])
+            with self.assertRaises(ValueError):
+                import_cv.extract(Path(d) / "cv.rtf")
+
+    def test_linkedin_proposes_and_never_reads_connections(self):
+        import import_linkedin
+        self.assertEqual(import_linkedin.ym("Mar 2021"), "2021-03")
+        self.assertEqual(import_linkedin.ym("2019"), "2019")
+        self.assertEqual(import_linkedin.ym(""), "")
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "Positions.csv").write_text(
+                "Company Name,Title,Description,Location,Started On,Finished On\n"
+                "Acme,Trainer,Ran onboarding. • Wrote guides.,Springfield,Jan 2020,\n")
+            (Path(d) / "Connections.csv").write_text("SECRET PERSON\n")
+            opened = []
+            real_open = Path.open
+            def spy(self_, *a, **k):
+                opened.append(self_.name)
+                return real_open(self_, *a, **k)
+            with mock.patch.object(Path, "open", spy):
+                p = import_linkedin.propose(d)
+        self.assertNotIn("Connections.csv", opened)
+        role = p["roles"][0]
+        self.assertEqual((role["status"], role["start"], role["end"]), ("proposed", "2020-01", "present"))
+        self.assertEqual(role["bullet_suggestions"], ["Ran onboarding.", "Wrote guides."])
+
+    def test_careerdata_add_checks_entries(self):
+        data = {"roles": [{"id": "acme", "title": "T", "org": "O", "start": "2020"}]}
+        self.assertIn("missing", careerdata.add_entry(data, "roles", {"id": "x", "title": "T"}))
+        self.assertIn("already exists", careerdata.add_entry(
+            data, "roles", {"id": "acme", "title": "T", "org": "O", "start": "2020"}))
+        self.assertIsNone(careerdata.add_entry(
+            data, "education", {"id": "ba", "degree": "B.A.", "institution": "State"}))
+
+    def test_doctor_exit_code_follows_required_items_only(self):
+        import doctor
+        ok = [("python", True, True, ""), ("claude", False, False, "")]
+        bad = ok + [("chrome", False, True, "")]
+        with mock.patch.object(doctor, "checks", lambda: ok):
+            self.assertEqual(doctor.main(), 0)
+        with mock.patch.object(doctor, "checks", lambda: bad):
+            self.assertEqual(doctor.main(), 1)
+
+
+class SendFolder(unittest.TestCase):
+    def test_no_setting_no_copy_and_relative_paths_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            settings = Path(d) / "app_settings.json"
+            with mock.patch.object(server, "APP_SETTINGS", settings):
+                self.assertIsNone(server.send_folder())
+                self.assertFalse(server.api_settings_send_folder({"send_folder": "relative/dir"})["ok"])
+                target = Path(d) / "send"
+                self.assertTrue(server.api_settings_send_folder({"send_folder": str(target)})["ok"])
+                self.assertEqual(server.send_folder(), target)
+                # Saving thresholds must not wipe the send folder (it used to replace the file).
+                server.api_settings_thresholds({"score_good_min": 75})
+                self.assertEqual(server.send_folder(), target)
+                with mock.patch.object(server, "entry_for_slug",
+                                       lambda slug: {"company": "Acme", "role": "Trainer"}):
+                    f = Path(d) / "cv.pdf"
+                    f.write_bytes(b"%PDF")
+                    copied = server.sync_to_desktop("acme", f)
+                self.assertTrue(Path(copied).exists())
+                server.api_settings_send_folder({"send_folder": ""})
+                self.assertIsNone(server.send_folder())
 
 
 if __name__ == "__main__":
