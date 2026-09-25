@@ -37,8 +37,7 @@ location classifier for both a US and a German user.
 
 ## Portfolio presentation
 
-- Screenshots of Jane Doe's pipeline, Build panel, score breakdown and log.
+- Done: screenshots, sample CV, CI badge, MIT license. Still: a short screen recording.
 - An architecture page and a security-model write-up (posting screen,
   `claude_run.SAFE_ARGS`, private tier, leak check).
-- LICENSE (MIT suggested; the credited upstream is MIT). Owner's decision.
 - How much of the original story the README tells. Owner's decision.

@@ -1,12 +1,19 @@
 # JobGenie
 
+[![tests](https://github.com/ProsePixie/JobGenie/actions/workflows/tests.yml/badge.svg)](https://github.com/ProsePixie/JobGenie/actions/workflows/tests.yml)
+
 A local job-search system run with [Claude Code](https://claude.com/claude-code). You keep
 your career as structured data. JobGenie finds and screens postings, says how qualified you
 are for each one, builds a tailored CV and cover letter, checks them the way an applicant
 tracking system reads them, and packages what you send. It will not invent a single claim.
 
-> Status: scaffold. The engine is complete and tested; onboarding (`/setup`) and the
-> generalisation work are in [ROADMAP.md](ROADMAP.md).
+Built during a real job search, for one: every feature exists because an application
+went wrong without it.
+
+> Status: the engine is complete and tested, and runs for anyone, anywhere. Guided
+> onboarding (`/setup`) is specified and next on the [ROADMAP](ROADMAP.md).
+
+![Pipeline board](docs/img/pipeline.png)
 
 ## Why it exists
 
@@ -38,6 +45,24 @@ cannot survive. JobGenie is built the other way round:
 | **Scout** | Polls company job boards (Greenhouse, Lever, Ashby and others) for matching roles |
 | **Skills** | `/fit`, `/apply`, `/scout`, `/warm`, `/prep`, `/outcome`, `/evidence` inside Claude Code |
 
+## See it
+
+Every posting gets a score with its reasons, including the gaps:
+
+![Score breakdown](docs/img/score.png)
+
+The Build panel: threads dialed Lead to Off, each requirement marked covered or a gap, every bullet tickable, a live preview.
+
+![Build panel](docs/img/build.png)
+
+A sample output, built from the fictional example profile: [Jane_Doe_CV.pdf](docs/sample/Jane_Doe_CV.pdf)
+
+<img src="docs/img/sample-cv-1.png" width="420" alt="Sample CV, page 1">
+
+And a readable log of everything the app did:
+
+![Log](docs/img/log.png)
+
 ## Quick start
 
 Needs Python 3.10+, Chrome or Edge, and poppler (`pdftotext`, `pdfunite`). No pip installs.
@@ -63,6 +88,19 @@ web/server.py: local UI over all of it (127.0.0.1 only, stdlib only)
 ```
 
 `CLAUDE.md` holds the rules every Claude Code session follows in this repo.
+
+## Limits, stated plainly
+
+- The AI steps (letter drafting, fit analysis, `/setup`) need Claude Code on your machine.
+  Building, checking, scoring and packaging do not.
+- PDFs need Chrome or Edge and poppler.
+- The score matches words, not meaning: it is reliable for spotting gaps and what a CV
+  leaves out, less so on short or generic postings. Every line of it is shown so you can judge.
+- CVs in English and German today.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
 
 ## Credits
 
