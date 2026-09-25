@@ -18,26 +18,21 @@ location classifier for both a US and a German user.
 - Thread behaviour is data, not ids: `people_focused` (scores orientation) and
   `systems_ok` (no penalty for systems work) in `threads.json`.
 - A generic example `threads.json` (English bases, five example threads).
+- `/setup` tools: `doctor`, `new_profile`, `import_cv` (PDF, DOCX), `import_linkedin`
+  (proposes, never writes, never opens connections), `careerdata add`.
+- Send folder is a setting; `python3` in all docs.
 
 ## Next
 
-1. **`/setup`** (the main new feature). `.claude/skills/setup/SKILL.md` is the
-   specification. Test it end to end with a real CV, PDF and DOCX.
-2. **LinkedIn importer**: `tools/import_linkedin.py`, proposing roles, education, skills
-   and certifications from the export's CSVs for `/setup` to confirm.
-3. **Other CV languages.** Only English and German have section labels and date words
-   (`render/render.py` `LABELS`, `MONTHS_DE`). Adding French or Spanish means one entry in
-   each, plus `text_<lang>` bullets.
-4. **More job sources.** Greenhouse, Lever, Ashby, SmartRecruiters, Workable and the
+1. **`/setup` with a real CV**: the skill and its tools (`doctor`, `new_profile`,
+   `import_cv`, `import_linkedin`, `careerdata add`) are built and tested end to end with a
+   fictional CV; it needs a run with a real person's CV and their feedback.
+2. **Other CV languages** ([#5](https://github.com/ProsePixie/JobGenie/issues/5)).
+3. **More job sources.** Greenhouse, Lever, Ashby, SmartRecruiters, Workable and the
    Bundesagentur are supported; national boards elsewhere are not.
-5. **`py` vs `python3`**: CLAUDE.md still shows Windows `py`; the server already uses
-   the running interpreter.
-6. **Desktop copy**: `web/server.py` `sync_to_desktop` copies finished CVs to
-   `Desktop/Job Applications`; make the folder a setting.
 
 ## Portfolio presentation
 
 - Done: screenshots, sample CV, CI badge, MIT license. Still: a short screen recording.
-- An architecture page and a security-model write-up (posting screen,
-  `claude_run.SAFE_ARGS`, private tier, leak check).
+- Done: [How it works](docs/HOW-IT-WORKS.md), the design and security write-up.
 - How much of the original story the README tells. Owner's decision.

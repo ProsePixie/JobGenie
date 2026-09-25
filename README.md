@@ -10,8 +10,8 @@ tracking system reads them, and packages what you send. It will not invent a sin
 Built during a real job search, for one: every feature exists because an application
 went wrong without it.
 
-> Status: the engine is complete and tested, and runs for anyone, anywhere. Guided
-> onboarding (`/setup`) is specified and next on the [ROADMAP](ROADMAP.md).
+> Status: complete and tested, and runs for anyone, anywhere: guided onboarding from your
+> own CV (`/setup`), scoring, building, checking and packaging. See the [ROADMAP](ROADMAP.md).
 
 ![Pipeline board](docs/img/pipeline.png)
 
@@ -69,11 +69,14 @@ Needs Python 3.10+, Chrome or Edge, and poppler (`pdftotext`; `pdfunite` only fo
 
 ```bash
 git clone https://github.com/ProsePixie/JobGenie && cd JobGenie
+python3 tools/doctor.py                # checks Chrome, poppler and Python, says how to fix
 cp -r profile.example profile          # the fictional Jane Doe, to try it
 python3 web/server.py                  # opens the app at http://127.0.0.1:8777
 ```
 
-Then make it yours: open the folder in Claude Code and run **`/setup`**. Full guide:
+Then make it yours: put your CV (PDF or DOCX) in `inbox/`, open the folder in Claude Code
+and run **`/setup`**. It proposes each fact from your CV and writes only what you confirm.
+(On Windows, use `py` instead of `python3`.) Full guide:
 [docs/SETUP.md](docs/SETUP.md).
 
 ## How it fits together
@@ -88,6 +91,7 @@ web/server.py: local UI over all of it (127.0.0.1 only, stdlib only)
 ```
 
 `CLAUDE.md` holds the rules every Claude Code session follows in this repo.
+**[How it works, and why it is built this way](docs/HOW-IT-WORKS.md)** explains the design decisions.
 
 ## Limits, stated plainly
 
