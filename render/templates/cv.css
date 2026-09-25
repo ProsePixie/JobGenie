@@ -1,0 +1,222 @@
+/* ATS-safe print stylesheet.
+ *
+ * Constraints that are not negotiable, because they are what parsers choke on:
+ *   - single column, normal flow, no floats or grid for content
+ *   - real text only; no icon fonts, no text baked into images
+ *   - contact details in the body, never in a running header or footer
+ *   - one <h1> (the name), <h2> per section, entries below that
+ *   - reading order in the DOM matches reading order on the page
+ */
+
+@page {
+  size: A4;
+  margin: 15mm 15mm 14mm 15mm;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10.2pt;
+  line-height: 1.38;
+  color: #1a1a1a;
+  margin: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+
+  /* Non-negotiable for ATS. Georgia ligates fi/fl/ffi by default, and those
+   * land in the text layer as U+FB01/U+FB02, which parsers turn into noise
+   * or drop. Verified by render/ats_check.py, which fails the build on them. */
+  font-variant-ligatures: none;
+  -webkit-font-feature-settings: "liga" 0, "clig" 0, "dlig" 0;
+  font-feature-settings: "liga" 0, "clig" 0, "dlig" 0;
+}
+
+/* ---- Header ---- */
+
+h1 {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 20pt;
+  font-weight: 700;
+  letter-spacing: -0.2pt;
+  margin: 0 0 2pt 0;
+}
+
+.headline {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: #33475b;
+  margin: 0 0 6pt 0;
+}
+
+.contact {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 9pt;
+  color: #333;
+  margin: 0 0 4pt 0;
+}
+
+/* Separators are literal characters so the text layer keeps fields apart. */
+.contact .sep { color: #999; padding: 0 4pt; }
+
+.contact a {
+  color: #1a1a1a;
+  text-decoration: none;
+  /* Never break a URL across lines. Chrome wraps "jane-doe" at the
+   * hyphen, and pdftotext then strips it as a hyphenation artifact, so the
+   * text layer records linkedin.com/in/janedoe, which is a real URL
+   * belonging to nobody. The line wraps between items instead. */
+  white-space: nowrap;
+}
+
+/* Same failure as the URL above, one line down. A break falling on the hyphen
+ * of a compound makes pdftotext drop it, so "Enablement-Programm" extracts as
+ * "EnablementProgramm" and a parser indexes a word that does not exist. German
+ * runs on hyphenated compounds, so this matters most in the German CV. */
+.nb {
+  white-space: nowrap;
+}
+
+.rule {
+  border: 0;
+  border-top: 1.2pt solid #33475b;
+  margin: 8pt 0 10pt 0;
+}
+
+/* ---- Sections ---- */
+
+h2 {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 10pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  /* No letter-spacing. Tracked capitals extracted as "E D U C AT I O N",
+   * which a parser hunting for the literal string EDUCATION will not match.
+   * Bold uppercase over a rule separates sections perfectly well. */
+  color: #33475b;
+  margin: 13pt 0 6pt 0;
+  padding-bottom: 2pt;
+  border-bottom: 0.5pt solid #c8d0d8;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+section { break-inside: auto; }
+
+/* ---- Entries ---- */
+
+.entry {
+  margin: 0 0 7pt 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10pt;
+}
+
+.entry-head.stacked { display: block; }
+.entry-head.stacked .entry-meta { text-align: left; margin-top: 1pt; }
+
+.entry-title {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 10.5pt;
+  font-weight: 700;
+  margin: 0;
+  /* Let a long title/org pair wrap inside its own column instead of
+     shoving the date block onto a second line. */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.entry-org {
+  font-weight: 400;
+  color: #33475b;
+}
+
+.entry-meta {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 8.8pt;
+  color: #5a6570;
+  /* A header too long for one line is stacked instead (cv_builder.entry_html). */
+  white-space: nowrap;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.entry-note {
+  font-size: 9.6pt;
+  color: #444;
+  margin: 2pt 0 0 0;
+}
+
+ul {
+  margin: 4pt 0 0 0;
+  padding-left: 14pt;
+}
+
+li { margin: 0 0 2.5pt 0; }
+
+/* Compact entries: roles kept for continuity but not argued under this persona.
+   They stay on the page so the chronology has no unexplained gaps. */
+.entry.compact { margin-bottom: 5pt; }
+.entry.compact .entry-title { font-size: 10pt; font-weight: 600; }
+.entry-meta-inline {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 8.8pt;
+  font-weight: 400;
+  color: #5a6570;
+  white-space: nowrap;
+}
+
+/* ---- Skills / certifications ---- */
+
+.kv { margin: 0 0 4pt 0; }
+
+.kv-label {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 9.2pt;
+  font-weight: 700;
+  color: #33475b;
+}
+
+.kv-value { font-size: 9.8pt; }
+
+.cert-list, .lang-list {
+  margin: 0;
+  padding-left: 14pt;
+}
+
+.cert-list li, .lang-list li { margin-bottom: 1.5pt; font-size: 9.8pt; }
+
+/* ---- Screen preview only ---- */
+
+@media screen {
+  body {
+    max-width: 190mm;
+    margin: 0 auto;
+    padding: 15mm;
+    background: #fff;
+  }
+}
+
+/* ---- CV builder additions ---- */
+
+.summary {
+  margin: 0 0 2pt 0;
+  font-size: 10.2pt;
+}
+
+/* Optional, Service base only, off by default. Floated so the name and
+   contact lines keep their place in the text layer. */
+.photo {
+  float: right;
+  width: 28mm;
+  height: 36mm;
+  object-fit: cover;
+  margin: 0 0 4pt 8pt;
+}

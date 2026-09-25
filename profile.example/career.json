@@ -1,0 +1,219 @@
+{
+  "_doc": "FICTIONAL example candidate. Replace with your own via the /setup skill (see docs/SETUP.md). Every bullet needs threads, or it never renders.",
+  "identity": {
+    "_tier": "public",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "phone": "+1 555 0100",
+    "location": "United States",
+    "city": "Springfield",
+    "work_authorization": "Authorized to work in the US.",
+    "links": {
+      "linkedin": "https://www.linkedin.com/in/example",
+      "portfolio": {
+        "url": "https://example.com",
+        "threads": []
+      },
+      "github": {
+        "url": "https://github.com/example",
+        "threads": [
+          "ai"
+        ]
+      }
+    }
+  },
+  "roles": [
+    {
+      "id": "acme",
+      "title": "Enablement Manager",
+      "org": "Acme Software",
+      "org_type": "enterprise",
+      "start": "2020-03",
+      "end": "present",
+      "location": "Remote",
+      "mode": "remote",
+      "bullets": [
+        {
+          "id": "acme-1",
+          "text": "Built a global onboarding program for 120 new sales hires a year, cutting time to first deal from five months to three.",
+          "threads": [
+            "enablement"
+          ],
+          "tags": [
+            "onboarding",
+            "sales"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "acme-2",
+          "text": "Designed a certification path for customer success managers with hands-on labs and a final assessment.",
+          "threads": [
+            "enablement"
+          ],
+          "tags": [
+            "certification",
+            "customer success"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "acme-3",
+          "text": "Introduced AI-assisted content workflows that halved the time to update product training after each release.",
+          "threads": [
+            "ai",
+            "enablement"
+          ],
+          "tags": [
+            "ai",
+            "content"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "acme-4",
+          "text": "Ran quarterly train-the-trainer sessions for regional enablement leads in four countries.",
+          "threads": [
+            "enablement"
+          ],
+          "tags": [
+            "facilitation"
+          ],
+          "strength": 2
+        }
+      ]
+    },
+    {
+      "id": "globex",
+      "title": "Technical Trainer",
+      "org": "Globex Corporation",
+      "org_type": "enterprise",
+      "start": "2016-01",
+      "end": "2020-02",
+      "location": "Springfield",
+      "mode": "onsite",
+      "bullets": [
+        {
+          "id": "globex-1",
+          "text": "Delivered administrator training on the company's cloud platform to enterprise customers, live and virtual.",
+          "threads": [
+            "enablement",
+            "technical"
+          ],
+          "tags": [
+            "training",
+            "cloud"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "globex-2",
+          "text": "Wrote lab guides and job aids used by every trainer on the team.",
+          "threads": [
+            "enablement",
+            "media"
+          ],
+          "tags": [
+            "documentation"
+          ],
+          "strength": 2
+        }
+      ]
+    },
+    {
+      "id": "example-project",
+      "title": "Creator",
+      "org": "Study Buddy (personal project)",
+      "org_type": "independent",
+      "start": "2025-06",
+      "end": "present",
+      "location": "Remote",
+      "mode": "independent",
+      "name": "Study Buddy",
+      "pitch": "a flashcard web app that turns course notes into spaced-repetition decks",
+      "bullets": [
+        {
+          "id": "example-project-1",
+          "text": "Built with AI coding tools in three weeks: note import, automatic card generation with human review, and progress tracking.",
+          "threads": [
+            "ai"
+          ],
+          "tags": [
+            "ai",
+            "python"
+          ],
+          "strength": 3
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "ba",
+      "degree": "B.A. Communication",
+      "institution": "Springfield State University",
+      "field": "Communication",
+      "start": "2011-09",
+      "end": "2015-06"
+    }
+  ],
+  "certifications": [
+    {
+      "id": "cert-1",
+      "name": "Certified Professional in Training Management",
+      "issuer": "Example Institute",
+      "year": "2021",
+      "strength": 2,
+      "threads": [
+        "enablement"
+      ]
+    }
+  ],
+  "skills": {
+    "enablement": {
+      "label": "Education & Enablement",
+      "items": [
+        "curriculum design",
+        "onboarding programs",
+        "workshop facilitation",
+        "certification paths",
+        "LMS administration"
+      ],
+      "threads": [
+        "enablement"
+      ]
+    },
+    "ai": {
+      "label": "AI & Tools",
+      "items": [
+        "ChatGPT",
+        "Claude",
+        "prompt design",
+        "AI-assisted content workflows"
+      ],
+      "threads": [
+        "ai"
+      ]
+    },
+    "platforms": {
+      "label": "Platforms",
+      "items": [
+        "Salesforce",
+        "Highspot",
+        "Confluence",
+        "Microsoft Teams"
+      ],
+      "threads": [
+        "enablement",
+        "technical"
+      ]
+    }
+  },
+  "languages": [
+    {
+      "language": "English",
+      "level": "Native",
+      "working": true
+    }
+  ]
+}

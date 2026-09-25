@@ -1,0 +1,2132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Search</title>
+<style>
+:root {
+  --bg:#f3f4f7; --panel:#fff; --panel2:#fafbfc; --ink:#14181d; --muted:#5a6570; --line:#e2e6ea;
+  --accent:#b0392e; --brand:#2f5d8a; --brand-ink:#fff; --blue:#1d3a5c; --ok:#1e7a4d; --warn:#9a6a00;
+  /* Semantic bands, one meaning each, used identically everywhere rather than
+     each screen inventing its own colour for "good" or "urgent". */
+  --score-good:var(--ok); --score-ok:var(--warn); --score-low:var(--accent);
+  --stage-early:var(--blue); --stage-active:var(--warn); --stage-closed:var(--muted);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#12151a; --panel:#1c2229; --panel2:#20272f; --ink:#e8ecf0; --muted:#94a1ad;
+          --line:#2c343d; --accent:#e06a5c; --brand:#6ea3d8; --brand-ink:#0d1520;
+          --blue:#7fa8d4; --ok:#4cc38a; --warn:#d6a441; color-scheme: dark; }
+}
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; }
+/* The page itself never scrolls: body is exactly one viewport tall and each
+   of its two children scrolls independently within that. Without this, a
+   long screen like Settings drags the sidebar up and out of view with it,
+   which defeats the entire point of a persistent sidebar - found by actually
+   scrolling the redesigned page, not by reading the CSS. */
+body { background:var(--bg); color:var(--ink); display:flex; height:100vh; overflow:hidden;
+       font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+
+/* ---- app shell: a sidebar, not a browser-tab-style top bar ---- */
+.sidebar { flex:0 0 216px; width:216px; background:var(--panel); border-right:1px solid var(--line);
+           display:flex; flex-direction:column; padding:16px 10px;
+           height:100vh; overflow-y:auto; }
+.sidebar .brand { display:flex; align-items:center; gap:9px; padding:4px 8px 16px; }
+.sidebar .brand .mark { width:26px; height:26px; border-radius:7px; background:var(--brand);
+           color:var(--brand-ink); display:flex; align-items:center; justify-content:center;
+           font-weight:800; font-size:13px; flex:0 0 auto; }
+.sidebar .brand b { font-size:14.5px; letter-spacing:-.2px; }
+.sidebar .who { color:var(--muted); font-size:11.5px; padding:0 8px 10px; }
+.navgroup-label { font-size:10px; text-transform:uppercase; letter-spacing:.7px; color:var(--muted);
+                  padding:14px 10px 5px; }
+nav { display:flex; flex-direction:column; gap:1px; }
+nav button { background:none; border:1px solid transparent; color:var(--muted); text-align:left;
+             padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13.5px;
+             display:flex; align-items:center; gap:9px; width:100%; }
+nav button .ic { width:18px; text-align:center; flex:0 0 auto; }
+nav button:hover { color:var(--ink); background:var(--panel2); }
+nav button.on { background:var(--brand); border-color:var(--brand); color:var(--brand-ink); font-weight:600; }
+
+/* This is the one element that actually scrolls when a screen is longer than
+   the viewport. The topbar sits inside it and stays pinned via sticky
+   positioning against this scroll, not against the page. */
+.appwrap { flex:1; min-width:0; height:100vh; overflow-y:auto; }
+.topbar { background:var(--panel); border-bottom:1px solid var(--line); padding:12px 24px;
+          position:sticky; top:0; z-index:5; }
+.topbar h1 { font-size:16px; margin:0; letter-spacing:-.2px; }
+.topbar p { margin:2px 0 0; color:var(--muted); font-size:12.5px; }
+main { padding:20px 26px; max-width:1180px; }
+section { display:none; }
+section.on { display:block; }
+#menuToggle { display:none; }
+@media (max-width:820px) {
+  .sidebar { position:fixed; z-index:30; transform:translateX(-100%); transition:transform .15s;
+             box-shadow:0 0 0 100vmax rgba(0,0,0,0); }
+  .sidebar.open { transform:none; box-shadow:0 0 0 100vmax rgba(0,0,0,.35); }
+  body { display:block; }
+  main { padding:16px; }
+  #menuToggle { display:block; position:fixed; top:10px; left:10px; z-index:29; width:38px;
+                height:38px; border-radius:8px; border:1px solid var(--line); background:var(--panel);
+                color:var(--ink); font-size:16px; cursor:pointer; }
+  .topbar { padding-left:58px; }
+}
+.card { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+        padding:14px 16px; margin-bottom:14px; }
+.card h2 { font-size:13px; text-transform:uppercase; letter-spacing:.7px;
+           color:var(--muted); margin:0 0 10px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+.stat { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+.stat .n { font-size:24px; font-weight:700; letter-spacing:-.5px; }
+.stat .k { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+label { display:block; font-size:12px; color:var(--muted); margin:0 0 3px;
+        text-transform:uppercase; letter-spacing:.4px; }
+input,select,textarea { width:100%; background:var(--bg); color:var(--ink);
+  border:1px solid var(--line); border-radius:7px; padding:7px 9px; font:inherit; }
+textarea { min-height:190px; resize:vertical; font-family:ui-monospace,Consolas,monospace; font-size:12.5px; }
+.row { display:grid; gap:10px; margin-bottom:10px; }
+.r2 { grid-template-columns:1fr 1fr; } .r3 { grid-template-columns:1fr 1fr 1fr; }
+.r4 { grid-template-columns:repeat(4,1fr); }
+@media (max-width:760px){ .r2,.r3,.r4 { grid-template-columns:1fr; } }
+button.go { background:var(--accent); color:#fff; border:none; border-radius:7px;
+            padding:9px 16px; font:inherit; font-weight:600; cursor:pointer; }
+button.go:disabled { opacity:.5; cursor:default; }
+button.alt { background:var(--bg); color:var(--ink); border:1px solid var(--line);
+             border-radius:7px; padding:8px 14px; font:inherit; cursor:pointer; }
+pre { background:var(--bg); border:1px solid var(--line); border-radius:7px;
+      padding:11px; overflow:auto; font-size:12px; line-height:1.45; white-space:pre-wrap;
+      font-family:ui-monospace,Consolas,monospace; max-height:440px; margin:0; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { text-align:left; color:var(--muted); font-size:11px; text-transform:uppercase;
+     letter-spacing:.5px; border-bottom:1px solid var(--line); padding:5px 8px 5px 0; }
+td { padding:6px 8px 6px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+.pill { display:inline-block; padding:1px 7px; border-radius:999px; font-size:11px;
+        border:1px solid var(--line); color:var(--muted); }
+.pill.ok { color:var(--ok); border-color:var(--ok); }
+.docbadge { cursor:pointer; text-decoration:underline; }
+.docbtn { padding:4px 10px; margin:2px 4px 2px 0; }
+.viewer { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50; display:flex; }
+.viewer-box { margin:3vh auto; width:min(1100px,94vw); height:94vh; background:var(--panel);
+  border-radius:8px; display:flex; flex-direction:column; overflow:hidden; }
+.viewer-head { display:flex; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.viewer-box iframe { flex:1; border:0; width:100%; background:#fff; }
+.applog { font-family:ui-monospace,Consolas,monospace; font-size:12px; }
+.logrow { padding:4px 6px; border-bottom:1px solid var(--line); white-space:pre-wrap; }
+.logrow.bad { background:rgba(200,40,40,.08); }
+.logrow.warn { background:rgba(200,140,0,.08); }
+.logrow pre { margin:2px 0 0 18px; color:var(--muted,#666); white-space:pre-wrap; font:inherit; }
+.pill.warn { color:var(--warn); border-color:var(--warn); }
+.pill.bad { color:var(--accent); border-color:var(--accent); }
+.muted { color:var(--muted); }
+.small { font-size:12px; }
+.blocked li { margin-bottom:6px; }
+details summary { cursor:pointer; color:var(--blue); font-size:13px; }
+.flash { padding:8px 11px; border-radius:7px; margin-bottom:10px; font-size:13px; display:none; }
+.flash.show { display:block; }
+.flash.good { background:rgba(30,122,77,.12); color:var(--ok); }
+.flash.bad { background:rgba(176,57,46,.12); color:var(--accent); }
+
+/* pipeline board */
+.board { display:flex; gap:10px; overflow-x:auto; padding-bottom:8px; align-items:flex-start; }
+.col { flex:0 0 232px; background:var(--panel); border:1px solid var(--line);
+       border-radius:10px; padding:9px; min-height:110px; transition:border-color .12s; }
+.col.over { border-color:var(--accent); border-style:dashed; }
+.col h3 { margin:0 0 8px; font-size:11px; text-transform:uppercase; letter-spacing:.6px;
+          color:var(--muted); display:flex; justify-content:space-between; }
+.col h3 b { color:var(--ink); font-weight:700; }
+.jc { background:var(--bg); border:1px solid var(--line); border-left:3px solid var(--line);
+      border-radius:8px; padding:8px 9px; margin-bottom:7px; cursor:grab; }
+.jc:active { cursor:grabbing; }
+.jc.sel { border-color:var(--accent); }
+/* The same three-way split used for a score: where an application actually
+   stands, at a glance, without reading the label. */
+.jc.stage-early { border-left-color:var(--stage-early); }
+.jc.stage-active { border-left-color:var(--stage-active); }
+.jc.stage-closed { border-left-color:var(--stage-closed); opacity:.72; }
+.jc .co { font-weight:700; font-size:13px; line-height:1.25; }
+.jc .ro { color:var(--muted); font-size:11.5px; line-height:1.3; margin-top:1px; }
+.jc .meta { margin-top:5px; display:flex; gap:4px; flex-wrap:wrap; }
+.jc .meta span { font-size:10px; padding:0 5px; border-radius:999px;
+                 border:1px solid var(--line); color:var(--muted); }
+.jc .meta span.score-good { color:var(--score-good); border-color:var(--score-good); }
+.jc .meta span.score-ok { color:var(--score-ok); border-color:var(--score-ok); }
+.jc .meta span.score-low { color:var(--score-low); border-color:var(--score-low); }
+.detail { margin-top:14px; }
+.detail .row { margin-bottom:9px; }
+.hint { color:var(--muted); font-size:12px; margin:0 0 10px; }
+.activity-log { max-height:180px; overflow-y:auto; border:1px solid var(--line);
+                border-radius:7px; padding:8px 10px; }
+.activity-list { list-style:none; margin:0; padding:0; }
+.activity-list li { padding:4px 0; border-bottom:1px solid var(--line); font-size:12.5px; }
+.activity-list li:last-child { border-bottom:none; }
+.activity-date { color:var(--muted); font-size:11px; margin-right:8px;
+                 font-variant-numeric:tabular-nums; }
+
+/* ---- Build panel (plans/cv-builder.md) ---- */
+.bwrap { display:grid; grid-template-columns:minmax(360px,1fr) minmax(420px,1.1fr); gap:16px;
+         align-items:start; }
+@media (max-width:1100px){ .bwrap { grid-template-columns:1fr; } }
+.bhead { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+.bhead h2 { margin:0 12px 0 0; font-size:17px; text-transform:none; letter-spacing:-.2px; color:var(--ink); }
+.seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.seg button { background:var(--bg); color:var(--muted); border:none; padding:6px 11px;
+              font:inherit; font-size:12.5px; cursor:pointer; border-right:1px solid var(--line); }
+.seg button:last-child { border-right:none; }
+.seg button.on { background:var(--brand); color:var(--brand-ink); font-weight:600; }
+.seg.small button { padding:3px 8px; font-size:11.5px; }
+.dial { display:grid; grid-template-columns:150px auto; gap:4px 10px; align-items:center;
+        padding:7px 0; border-bottom:1px solid var(--line); }
+.dial:last-child { border-bottom:none; }
+.dial .name { font-weight:600; font-size:13px; }
+.dial .why { grid-column:1 / span 2; color:var(--muted); font-size:11.5px; }
+.brole { border:1px solid var(--line); border-radius:8px; margin-bottom:6px; }
+.brole > summary { padding:6px 9px; font-size:13px; color:var(--ink); list-style:none; }
+.brole > summary::-webkit-details-marker { display:none; }
+.brole .cnt { float:right; color:var(--muted); font-size:11px; }
+.bline { display:flex; gap:7px; align-items:flex-start; padding:5px 9px; border-top:1px solid var(--line);
+         font-size:12.5px; }
+.bline.off { opacity:.55; }
+.bline input[type=checkbox] { width:auto; margin-top:3px; }
+.bline .txt { flex:1; }
+.bline .tags { color:var(--muted); font-size:10.5px; }
+.bline .star { background:none; border:none; cursor:pointer; font-size:15px; color:var(--muted);
+               padding:0 2px; line-height:1; }
+.bline .star.on { color:var(--warn); }
+.bline .edit { background:none; border:none; cursor:pointer; color:var(--blue); font-size:11.5px; }
+.bline .ovr { color:var(--warn); font-size:10.5px; }
+.req { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:4px 0; }
+.req .pill { flex:0 0 auto; }
+.pframe { width:100%; height:78vh; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.pbar { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+
+<button id="noteFab" title="Leave a note about this screen"
+        style="position:fixed;right:20px;bottom:20px;z-index:20;width:48px;height:48px;
+               border-radius:50%;border:none;background:var(--accent);color:#fff;
+               font-size:20px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25)">
+  &#9998;
+  <span id="noteCount" style="display:none;position:absolute;top:-4px;right:-4px;
+        background:var(--ink);color:var(--panel);border-radius:999px;font-size:10px;
+        min-width:16px;height:16px;line-height:16px;font-weight:700"></span>
+</button>
+<div id="notePanel" style="display:none;position:fixed;right:20px;bottom:76px;z-index:20;
+     width:300px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+     padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.25)">
+  <label style="margin-top:0">What's wrong, or what should be different, right here</label>
+  <textarea id="noteText" style="min-height:80px" placeholder="e.g. I don't know what this field means, or why I'd change it"></textarea>
+  <div id="noteFlash" class="flash"></div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="go" id="noteSubmit" style="flex:1">Save note</button>
+    <button class="alt" id="noteCancel">Cancel</button>
+  </div>
+</div>
+
+<button id="menuToggle">&#9776;</button>
+<aside class="sidebar">
+  <div class="brand"><span class="mark">JS</span><b>Job Search</b></div>
+  <span class="who" id="who" style="padding:0 8px 10px;display:block;color:var(--muted);font-size:11.5px"></span>
+  <div class="navgroup-label">Main</div>
+  <nav>
+    <button data-tab="today" data-title="Today|Everything that needs attention, in one place" class="on"><span class="ic">&#128203;</span>Today</button>
+    <button data-tab="pipe" data-title="Pipeline|Every application, tracked start to finish"><span class="ic">&#128193;</span>Pipeline</button>
+    <button data-tab="sources" data-title="Sources|Job boards polled directly, plus anything captured by hand"><span class="ic">&#128225;</span>Sources</button>
+    <button data-tab="data" data-title="Career data|The source of truth every document is built from &mdash; edit it here"><span class="ic">&#127891;</span>Career data</button>
+    <button data-tab="settings" data-title="Settings|What changes as your situation changes"><span class="ic">&#9881;&#65039;</span>Settings</button>
+  </nav>
+  <div class="navgroup-label">Tools</div>
+  <nav>
+    <button data-tab="dash" data-title="Dashboard|The numbers, at a glance"><span class="ic">&#128202;</span>Dashboard</button>
+    <button data-tab="screen" data-title="Screen a posting|Score a posting for fit before committing to it"><span class="ic">&#128221;</span>Screen a posting</button>
+    <button data-tab="watch" data-title="Watchlist|Target companies and the reasoning behind each one"><span class="ic">&#11088;</span>Watchlist</button>
+    <button data-tab="applog" data-title="Log|What the app did, and why anything failed"><span class="ic">&#128220;</span>Log</button>
+  </nav>
+</aside>
+
+<div class="appwrap">
+<div class="topbar"><h1 id="topbarTitle">Today</h1><p id="topbarSub">Everything that needs attention, in one place</p></div>
+<main>
+
+<section id="today" class="on">
+  <div class="card" id="tUnreadyCard" style="display:none">
+    <h2>CVs that would fail today <span id="tCountUnready" class="pill warn"></span></h2>
+    <p class="hint">Not sent yet, and rendered before a rule changed. Re-render them with
+      <code>py tools/rerender.py</code> (a dry run that shows old and new side by side),
+      then <code>--apply</code>, and read each one before it goes anywhere.</p>
+    <div id="tUnready"></div>
+  </div>
+  <div class="card">
+    <h2>Decided, nothing planned <span id="tCountNoNext" class="pill"></span></h2>
+    <p class="hint">Screened or scored with no next action written down. An early
+      application beats a better late one: build the CV, or close it.</p>
+    <div id="tNoNext"></div>
+  </div>
+  <div class="card">
+    <h2>Next actions <span id="tCountActions" class="pill warn"></span></h2>
+    <p class="hint">Something was written down to do. Longest-waiting first.</p>
+    <div id="tActions"></div>
+  </div>
+  <div class="card">
+    <h2>Waiting on a reply <span id="tCountAwaiting" class="pill"></span></h2>
+    <p class="hint">Sent, and no word back. After a week, a short follow-up is normal.
+      After thirty days, record it as ghosted so the log stays honest.</p>
+    <div id="tAwaiting"></div>
+  </div>
+  <div class="card">
+    <h2>Gone quiet <span id="tCountStale" class="pill"></span></h2>
+    <p class="hint">Open, nothing planned, no activity in two weeks or more. Different
+      from a next action on purpose &mdash; this is "did I forget this exists", not
+      "I meant to do something and have not yet".</p>
+    <div id="tStale"></div>
+  </div>
+  <div class="card">
+    <h2>Best fits, not yet pursued <span id="tCountScored" class="pill ok"></span></h2>
+    <p class="hint">Scored and still open. A number sitting in a column of fifteen
+      cards is invisible; this is what makes it count for something.</p>
+    <div id="tScored"></div>
+  </div>
+  <div class="card" id="tCapturesCard" style="display:none">
+    <h2>Captured postings waiting <span id="tCountCaptures" class="pill warn"></span></h2>
+    <p class="hint">Grabbed from a page but not yet attached to anything or dismissed.</p>
+    <button class="alt" id="tGoToCaptures">Go to the capture inbox</button>
+  </div>
+  <div class="card" id="tEmptyCard" style="display:none">
+    <p class="muted">Nothing needs attention right now. <span id="tOpenCount"></span></p>
+  </div>
+</section>
+
+<section id="dash">
+  <div class="grid" id="stats"></div>
+  <div class="card"><h2>Applications</h2><div id="apps"></div></div>
+  <div class="row r2">
+    <div class="card"><h2>Open items</h2><div id="needs" class="small"></div></div>
+    <div class="card"><h2>Blocked claims &mdash; never reintroduce</h2>
+      <ul class="blocked small" id="blocked"></ul></div>
+  </div>
+</section>
+
+<section id="pipe">
+  <div class="card">
+    <h2>Add to pipeline</h2>
+    <div id="aflash" class="flash"></div>
+    <div class="row r4">
+      <div><label>Company</label><input id="acompany" placeholder="TE Connectivity"></div>
+      <div><label>Role</label><input id="arole" placeholder="Senior Technical Trainer"></div>
+      <div><label>Link</label><input id="aurl" placeholder="https://..."></div>
+      <div><label>&nbsp;</label><button class="go" id="addBtn" style="width:100%">Add</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Captured postings <span id="capCount" class="pill" style="display:none"></span></h2>
+    <details>
+      <summary style="cursor:pointer;color:var(--muted);font-size:12px">
+        Grab a posting straight from the page, without copy-paste</summary>
+      <p class="hint" style="margin-top:8px">Drag this link to your bookmarks bar. On any job
+        posting page, click it: the page's text is sent here and shows up below, ready to
+        attach to an entry or start a new one. Nothing runs on the page except reading its own
+        visible text; a browser cannot reach across tabs any other way, which is also why this
+        has to be a bookmarklet rather than a button in this app.</p>
+      <p><a id="bookmarklet" href="#" class="pill ok" style="text-decoration:none;cursor:grab"
+            onclick="return false" title="Drag me to your bookmarks bar">&#128279; Grab this posting</a></p>
+    </details>
+    <div id="capList" style="margin-top:10px"></div>
+  </div>
+  <p class="hint">Drag a card between columns to move it. Click a card to edit it.
+     Moving to Sent, Responded or Interviewing marks it as applied.</p>
+  <div id="bflash" class="flash"></div>
+  <div class="board" id="board"></div>
+  <div class="detail card" id="detail" style="display:none"></div>
+</section>
+
+<section id="sources">
+  <div class="card">
+    <h2>Poll the job boards</h2>
+    <p class="hint">Polls each company at its applicant tracking system endpoint, filters by
+      your target terms and by location, and reports only what it has not shown you before.
+      Careers pages render listings in JavaScript, so this goes to the JSON underneath.</p>
+    <button class="go" id="runSrc">Check for new roles</button>
+    <button class="alt" id="runSrcAll">Include everything, ignore history</button>
+    <label style="display:inline-flex;align-items:center;gap:6px;margin-left:12px;text-transform:none;letter-spacing:0">
+      <input type="checkbox" id="anywhere" style="width:auto"> anywhere, not just DACH and remote</label>
+    <div id="srcflash" class="flash" style="margin-top:10px"></div>
+    <div id="srcres" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h2>Add a company</h2>
+    <p class="hint">Tries every known ATS with the obvious slugs. A result with zero roles is
+      the ATS being polite about a company it has never heard of, so those are discarded.</p>
+    <div class="row r2">
+      <div><input id="discName" placeholder="Company name"></div>
+      <div><button class="go" id="discBtn">Find its job board</button></div>
+    </div>
+    <div id="discflash" class="flash"></div>
+    <div id="discres"></div>
+  </div>
+
+  <div class="card"><h2>Configured</h2><div id="srclist"></div></div>
+  <div class="card"><h2>Not found by slug guessing</h2>
+    <p class="hint" id="srcmissing"></p></div>
+</section>
+
+<section id="screen">
+  <div class="card">
+    <h2>Screen a posting</h2>
+    <div class="row r2">
+      <div><label>Advertised title</label>
+        <input id="ptitle" placeholder="AI Enablement Specialist"></div>
+      <div><label>Company (needed only to save it)</label>
+        <input id="pcompany" placeholder="TE Connectivity"></div>
+    </div>
+    <div class="row"><div><label>Posting text</label>
+      <textarea id="pbody" placeholder="Paste the full posting body here."></textarea></div></div>
+    <button class="go" id="screenBtn">Screen it</button>
+    <button class="alt" id="toPipe" style="display:none">Add to pipeline</button>
+    <span class="muted small" style="margin-left:10px">Mechanical prescreen. Nothing is saved unless you add it.</span>
+    <div id="sflash" class="flash" style="margin-top:10px"></div>
+  </div>
+  <div class="card" id="pcard" style="display:none"><h2>Prescreen</h2><pre id="pout"></pre></div>
+</section>
+
+
+<section id="build">
+  <div class="bhead">
+    <h2 id="bTitle">Build CV</h2>
+    <button class="alt" id="bBack">&larr; Back</button>
+    <button class="alt" id="bResuggest" title="Throw away changes and start from the suggestion again">Re-suggest</button>
+    <button class="alt" id="bSave">Save</button>
+    <button class="go" id="bFinalize">Finalize CV</button>
+  </div>
+  <div id="bflash" class="flash"></div>
+  <div class="bwrap">
+    <div>
+      <div class="card">
+        <h2>Base and language</h2>
+        <div class="row r2">
+          <div><label>Base</label><div class="seg" id="bBase"></div>
+            <p class="hint" id="bBaseWhy" style="margin:4px 0 0"></p></div>
+          <div><label>Language</label><div class="seg" id="bLang">
+            <button data-v="en">English</button><button data-v="de">Deutsch</button></div>
+            <p class="hint" id="bLangWhy" style="margin:4px 0 0"></p></div>
+        </div>
+        <div class="row"><div><label>Headline under your name</label>
+          <input id="bHeadline" placeholder="The job title, as the posting says it"></div></div>
+        <div class="row" id="bPhotoRow" style="display:none"><div>
+          <label style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
+          <input type="checkbox" id="bPhoto" style="width:auto"> Include photo (Service only)</label></div></div>
+        <div class="row r2"><div><label>Preset</label><select id="bPreset"></select></div>
+          <div style="display:flex;gap:6px;align-items:flex-end">
+            <button class="alt" id="bPresetSave">Save as preset</button></div></div>
+        <details style="margin-top:8px"><summary>Advanced</summary>
+          <div class="row r2" style="margin-top:6px"><div><label>Pages</label>
+            <select id="bPagesSel"><option value="">Automatic</option><option value="1">1</option>
+              <option value="2">2</option><option value="3">3</option></select></div>
+            <p class="hint" style="margin:0;align-self:end">Automatic: the base's length, and a
+              one-page base goes to two when one page would be too thin to argue anything.</p></div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Summary</h2>
+        <p class="hint">Two or three lines under the headline, the first thing a recruiter
+          reads. The AI draft uses only what this CV shows; it goes on the CV only once you
+          tick Accept.</p>
+        <textarea id="bSummary" style="min-height:70px;font-family:inherit;font-size:13px"
+          placeholder="Draft one, or write your own."></textarea>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
+          <button class="alt" id="bSummaryDraft">Draft with AI</button>
+          <label style="margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
+            <input type="checkbox" id="bSummaryOk" style="width:auto"> Accept for this CV</label>
+          <span class="muted small" id="bSummaryNote"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Threads <span class="muted small" style="text-transform:none;letter-spacing:0">
+          one Lead, at most <span id="bMaxStrong">2</span> Strong</span></h2>
+        <div id="bDials"></div>
+        <details id="bMoreWrap" style="margin-top:8px"><summary>More threads from the other base</summary>
+          <div id="bMore"></div></details>
+        <p class="hint" id="bProblems" style="color:var(--accent);margin-top:8px"></p>
+      </div>
+
+      <div class="card">
+        <h2>What the posting asks for</h2>
+        <p class="hint">Covered by this CV, in your data but not selected (Add puts it in),
+          or a genuine gap (never invented; the letter can address it).</p>
+        <div id="bReqs"></div>
+      </div>
+
+      <div class="card">
+        <h2>Jobs and bullets</h2>
+        <p class="hint">Ticked bullets appear. A tick you change is kept as your choice
+          (&#9679;); <b>&#9733;</b> marks a story you want to be asked about: it goes first and is
+          kept longest. Edit rewords it in your career data.</p>
+        <div id="bUntranslated" class="hint" style="display:none;border-left:3px solid var(--accent);padding-left:8px"></div>
+        <div id="bRoles"></div>
+      </div>
+
+      <div class="card">
+        <h2>Letter</h2>
+        <p class="hint">Follows this CV: the Lead sets the angle, the evidence is what the CV
+          shows, the gaps are left out or stated plainly. Draft with AI takes 2 to 5 minutes.</p>
+        <button class="go" id="bLetterDraft">Draft letter with AI</button>
+        <button class="alt" id="bLetterScaffold">Blank template only</button>
+        <button class="alt" id="bLetterOpen">Open letter.md</button>
+        <button class="alt" id="bLetterRender">Render letter</button>
+        <button class="alt" id="bLetterPdf" style="display:none">Open letter PDF</button>
+        <button class="alt" id="bFit" title="A Claude session reads your whole career against this posting: honest bridges and plain gaps, which the letter draft then uses">Analyze fit (optional)</button>
+        <pre id="bLetterOut" style="display:none;margin-top:8px;max-height:220px"></pre>
+      </div>
+
+      <div class="card">
+        <h2>Send</h2>
+        <p class="hint">Package for sending puts the CV and letter under clean names in a
+          submit folder, with one merged PDF for portals that take a single upload, and copies
+          them to the Desktop folder. It refuses a CV that fails its checks, a stale or
+          overlong letter, or anything from the private tier.</p>
+        <button class="go" id="bPackage">Package for sending</button>
+        <button class="alt" id="bOpenSubmit" style="display:none">Open submit folder</button>
+        <button class="alt" id="bMarkSent">Mark as sent</button>
+        <pre id="bSendOut" style="display:none;margin-top:8px;max-height:220px"></pre>
+      </div>
+
+      <div class="card">
+        <h2>Brief</h2>
+        <p class="hint">What this CV argues and what an interviewer is likely to ask.
+          Doubles as interview prep for this job.</p>
+        <div id="bBrief"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="position:sticky;top:64px">
+        <div class="pbar">
+          <b>Preview</b>
+          <span class="pill" id="bPages"></span>
+          <span class="pill" id="bBullets"></span>
+          <label style="margin:0 0 0 auto;text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--ink)">
+            <input type="checkbox" id="bSix" style="width:auto"> 6-second view</label>
+        </div>
+        <iframe id="bFrame" class="pframe" title="CV preview"></iframe>
+        <div id="bResult" style="display:none;margin-top:10px">
+          <div class="pbar"><b>Finalized</b> <span class="pill" id="bResPill"></span>
+            <button class="alt" id="bOpenPdf">Open PDF</button></div>
+          <pre id="bResOut" style="max-height:220px"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="card"><h2>Roles and bullets</h2>
+    <p class="hint">The source of truth every CV and letter is built from. A new certification
+      or a fact worth adding belongs here, typed in by you, not routed through a conversation.</p>
+    <div id="roles"></div></div>
+
+  <div class="card"><h2>Certifications</h2>
+    <div class="row r4">
+      <div><input id="certName" placeholder="Name"></div>
+      <div><input id="certIssuer" placeholder="Issuer"></div>
+      <div><input id="certYear" placeholder="Year, e.g. 2026"></div>
+      <div><button class="go" id="certAdd" style="width:100%">Add</button></div>
+    </div>
+    <div id="certThreads"></div>
+    <div id="certFlash" class="flash"></div>
+    <div id="certList"></div>
+  </div>
+
+  <div class="card"><h2>Skills</h2><div id="skills"></div></div>
+</section>
+
+<section id="watch">
+  <div class="card"><h2>Search terms</h2><div id="terms" class="small"></div></div>
+  <div id="cats"></div>
+  <div class="card"><h2>Income streams</h2><ul class="small" id="streams"></ul></div>
+</section>
+
+<section id="settings">
+  <div class="card">
+    <h2>Local availability (bridge work only)</h2>
+    <p class="hint">This governs one thing: the local job-board search (the optional German Bundesagentur source) - retail,
+      shift work, anything that needs you physically present. It has no effect on remote roles,
+      teaching applications, or freelance work; none of those care about a postal code or a
+      shift pattern. Change the radius here and the very next "Check for new roles" run uses it -
+      it used to be frozen at whatever a discovery happened to write down once, with no way to
+      change it short of a code edit.</p>
+    <div class="row r3">
+      <div><label>Postal code</label><input id="setPlz"></div>
+      <div><label>Radius, km</label><input id="setRadius" type="number" min="1" max="200"></div>
+      <div><label>Pay floor, EUR gross/month (your own reference, not enforced automatically)</label><input id="setFloor" type="number" min="0"></div>
+    </div>
+    <div class="row r2">
+      <div><label>Shifts that work (one per line)</label><textarea id="setShiftsYes" style="min-height:70px"></textarea></div>
+      <div><label>Shifts that do not (one per line)</label><textarea id="setShiftsNo" style="min-height:70px"></textarea></div>
+    </div>
+    <button class="go" id="setAvailSave">Save availability</button>
+    <div id="setAvailFlash" class="flash"></div>
+  </div>
+
+  <div class="card">
+    <h2>Scoring</h2>
+    <p class="hint">Every posting you save is scored automatically, 0-100, for how well your
+      career data covers what it asks. Open a card to see the breakdown line by line.</p>
+    <ul class="hint" style="margin:4px 0 8px 18px">
+      <li><b>Requirements, 60%</b>: each requirement line in the posting, against the CV the
+        Build panel would make. On that CV counts fully, in your data but not on the CV counts
+        0.6 (add it), a gap counts nothing. Nice-to-haves count half; personal qualities are
+        not counted.</li>
+      <li><b>Lead clarity, 15%</b>: how clearly one of your threads owns the posting.</li>
+      <li><b>People or systems, 10%</b>: for enablement and teaching roles only, whether the job
+        enables people or configures systems (the title trap).</li>
+      <li><b>Evidence, 15%</b>: a portfolio piece for that thread, ready to show or not.
+        Not counted for service roles.</li>
+    </ul>
+    <p class="hint">A part that cannot be judged is left out and its weight shared, rather
+      than guessed. Contract, relocation or German requirements are shown as "check first",
+      not scored. A /fit review, or a number you type into a card, overrides the app's score.
+      The thresholds below set the colours and what Today calls stale.</p>
+    <div class="row r3">
+      <div><label>Good, at or above</label><input id="setGood" type="number" min="0" max="100"></div>
+      <div><label>OK, at or above</label><input id="setOk" type="number" min="0" max="100"></div>
+      <div><label>Stale after, days</label><input id="setStale" type="number" min="1"></div>
+    </div>
+    <button class="go" id="setThreshSave">Save thresholds</button>
+    <div id="setThreshFlash" class="flash"></div>
+  </div>
+
+  <div class="card">
+    <h2>Search terms</h2>
+    <p class="hint">What a posting's title has to contain to be worth a second look.</p>
+    <div class="row r2">
+      <div><label>Primary</label><div id="setTermsPrimary"></div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <input id="setTermAddPrimary" placeholder="Add a term"><button class="alt" id="setTermBtnPrimary">Add</button></div></div>
+      <div><label>Secondary</label><div id="setTermsSecondary"></div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <input id="setTermAddSecondary" placeholder="Add a term"><button class="alt" id="setTermBtnSecondary">Add</button></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Target companies</h2>
+    <p class="hint">Everyone the watchlist keeps an eye on, grouped by why they are on it.</p>
+    <div class="row r4">
+      <div><input id="setCoName" placeholder="Company name"></div>
+      <div><input id="setCoDomain" placeholder="Domain (optional)"></div>
+      <div><select id="setCoCategory"></select></div>
+      <div><button class="go" id="setCoAdd" style="width:100%">Add</button></div>
+    </div>
+    <div id="setCoFlash" class="flash"></div>
+    <div id="setCompanies" style="margin-top:10px;max-height:320px;overflow-y:auto"></div>
+  </div>
+
+</section>
+
+<section id="applog">
+  <div class="card">
+    <h2>What the app did <span id="logCount" class="pill"></span></h2>
+    <p class="hint">Every action, newest first, with the reason underneath when something
+      failed. Scripts that fail are listed too. It records what was done, never your posting
+      text or career data. Saved in <code id="logPath">data/app-log.txt</code>, so a
+      development session can read it as well.</p>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+      <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none">
+        <input type="checkbox" id="logProblems" style="width:auto"> Problems only</label>
+      <input id="logFilter" placeholder="Filter, e.g. acme or Finalize" style="flex:1">
+      <button class="alt" id="logRefresh">Refresh</button>
+    </div>
+    <div id="logList" class="applog"></div>
+  </div>
+</section>
+
+</main>
+
+<div id="viewer" class="viewer" style="display:none">
+  <div class="viewer-box">
+    <div class="viewer-head">
+      <b id="viewerTitle"></b>
+      <span id="viewerTabs"></span>
+      <span style="flex:1"></span>
+      <button class="alt" id="viewerOpen" title="Open in your PDF viewer or editor">Open outside the app</button>
+      <button class="alt" id="viewerClose">Close</button>
+    </div>
+    <iframe id="viewerFrame" title="Document"></iframe>
+  </div>
+</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c;
+                          if (h !== undefined) n.innerHTML = h; return n; };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// A stored "url" is sometimes a placeholder from before this field meant
+// anything strict - "pasted", "direct" - left by hand entry long before there
+// was a paste box to put that in instead. A bare href built from one of those
+// resolves as a path relative to whatever origin happens to be serving this
+// page, not as an error, so clicking it can silently open a different local
+// server entirely. Anything that is not actually http(s) renders as plain
+// text instead of a link.
+function linkOrText(url, label){
+  if (!url) return '';
+  label = label || 'Open posting';
+  return /^https?:\/\//i.test(url)
+    ? ' <a class="small" href="'+esc(url)+'" target="_blank" rel="noopener" style="margin-left:8px">'+esc(label)+'</a>'
+    : ' <span class="muted small" style="margin-left:8px" title="Saved as text, not a link">'+esc(url)+'</span>';
+}
+
+// ---- document viewer: a CV or letter, inside the app ----
+let VIEW_DOCS = [];
+function openViewer(docs, index){
+  VIEW_DOCS = docs; showDoc(index || 0);
+  $('#viewer').style.display = '';
+}
+function showDoc(i){
+  const d = VIEW_DOCS[i]; if (!d) return;
+  $('#viewerTitle').textContent = d.label;
+  $('#viewerFrame').src = '/api/file?path=' + encodeURIComponent(d.path);
+  $('#viewerTabs').innerHTML = VIEW_DOCS.length < 2 ? '' : VIEW_DOCS.map((x, j) =>
+    '<button class="alt'+(j===i?' on':'')+'" data-vi="'+j+'" style="padding:2px 8px;margin-left:6px">'+esc(x.label)+'</button>').join('');
+  $('#viewerTabs').querySelectorAll('[data-vi]').forEach(b => b.onclick = () => showDoc(+b.dataset.vi));
+  $('#viewerOpen').onclick = () => post('/api/open', {path: d.path});
+}
+$('#viewerClose').onclick = () => { $('#viewer').style.display = 'none'; $('#viewerFrame').src = 'about:blank'; };
+$('#viewer').onclick = ev => { if (ev.target.id === 'viewer') $('#viewerClose').onclick(); };
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && $('#viewer').style.display === '') $('#viewerClose').onclick(); });
+
+async function openDocsFor(id, kind){
+  const w = await get('/api/workspace?id='+encodeURIComponent(id));
+  const docs = (w.docs || []);
+  if (!docs.length) return;
+  const i = Math.max(0, docs.findIndex(d => d.kind === kind));
+  openViewer(docs, i);
+}
+
+// ---- the app log ----
+async function loadLog(){
+  const r = await get('/api/log?lines=1500');
+  const probs = $('#logProblems').checked, q = ($('#logFilter').value || '').toLowerCase();
+  const rows = (r.entries || []).filter(e =>
+    (!probs || /FAILED|ERROR|script/.test(e.level)) &&
+    (!q || (e.line + ' ' + e.detail.join(' ')).toLowerCase().includes(q)));
+  $('#logCount').textContent = rows.length;
+  if (r.path) $('#logPath').textContent = r.path;
+  $('#logList').innerHTML = rows.length ? rows.slice(0, 400).map(e => {
+    const cls = /FAILED|ERROR/.test(e.level) ? 'bad' : e.level === 'script' ? 'warn' : '';
+    return '<div class="logrow '+cls+'"><div>'+esc(e.line)+'</div>'
+      + (e.detail.length ? '<pre>'+esc(e.detail.join('\n'))+'</pre>' : '') + '</div>';
+  }).join('') : '<p class="muted small">Nothing logged yet'+(probs||q?' that matches':'')+'.</p>';
+}
+$('#logRefresh').onclick = loadLog;
+$('#logProblems').onchange = loadLog;
+$('#logFilter').oninput = () => { clearTimeout(window._lf); window._lf = setTimeout(loadLog, 200); };
+setInterval(() => { if ($('#applog').classList.contains('on')) loadLog(); }, 5000);
+
+function showTab(name){
+  let title = '', sub = '';
+  document.querySelectorAll('nav button').forEach(x => {
+    const on = x.dataset.tab === name;
+    x.classList.toggle('on', on);
+    if (on){ const parts = (x.dataset.title || '').split('|'); title = parts[0]; sub = parts[1] || ''; }
+  });
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === name));
+  if (name === 'applog') loadLog();
+  if (title){ $('#topbarTitle').textContent = title; $('#topbarSub').textContent = sub; }
+  // Small-screen sidebar: showing a section is the natural moment to close it.
+  document.querySelector('.sidebar').classList.remove('open');
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+$('#menuToggle').onclick = () => document.querySelector('.sidebar').classList.toggle('open');
+
+// What the last Prepare produced, so the letter controls know which folder.
+
+async function get(p){ const r = await fetch(p); return r.json(); }
+async function post(p, b){ const r = await fetch(p, {method:'POST',
+  headers:{'Content-Type':'application/json'}, body:JSON.stringify(b)}); return r.json(); }
+
+function flash(id, msg, good){ const f = $(id); f.textContent = msg;
+  f.className = 'flash show ' + (good ? 'good' : 'bad'); }
+
+// An outcome's colour. Rejections are tested first: "rejected-interview"
+// contains "interview", and testing the good patterns first painted it green.
+const cls = o => /skip|reject|ghost|withdraw/.test(o||'') ? 'bad'
+               : /offer|advanced|screen|interview/.test(o||'') ? 'ok' : 'warn';
+
+// ---- dashboard ----
+let STATUS = null;
+async function loadStatus(){
+  const s = await get('/api/status'); STATUS = s;
+  $('#who').textContent = s.name || 'name not set';
+
+  const outcomes = {};
+  s.applications.forEach(a => { outcomes[a.outcome] = (outcomes[a.outcome]||0)+1; });
+  const sent = s.applications.filter(a => a.applied).length;
+
+  $('#stats').innerHTML = '';
+  [['Applications logged', s.applications.length], ['Actually sent', sent],
+   ['Jobs screened', s.screened], ['Roles', s.roles], ['Bullets', s.bullets],
+   ['Open items', s.needs.length]].forEach(([k,v]) => {
+    $('#stats').append(el('div','stat','<div class="n">'+v+'</div><div class="k">'+k+'</div>'));
+  });
+
+  let rows = '<table><tr><th>Company</th><th>Role</th><th>Persona</th><th>Score</th><th>Sent</th><th>Outcome</th></tr>';
+  s.applications.forEach(a => {
+    rows += '<tr><td>'+esc(a.company)+'</td><td>'+esc(a.role)+'</td><td class="muted">'
+      + esc(a.persona||'') + '</td><td>' + (a.score==null?'':a.score) + '</td><td>'
+      + (a.applied?'yes':'<span class="muted">no</span>') + '</td><td><span class="pill '
+      + cls(a.outcome) + '">' + esc(a.outcome||'') + '</span></td></tr>';
+  });
+  $('#apps').innerHTML = rows + '</table>';
+
+  $('#needs').innerHTML = s.needs.length
+    ? '<ul>' + s.needs.map(n => '<li><b>'+esc(n.where)+'</b> '+esc(n.what)+'</li>').join('') + '</ul>'
+    : '<span class="muted">Nothing outstanding.</span>';
+
+  $('#blocked').innerHTML = s.blocked.map(b =>
+    '<li><b>'+esc(b.claim)+'</b><br><span class="muted">'+esc(b.rule)+'</span></li>').join('');
+
+}
+
+// ---- screen ----
+$('#screenBtn').onclick = async () => {
+  const btn = $('#screenBtn'); btn.disabled = true; btn.textContent = 'Screening...';
+  const r = await post('/api/screen', {title:$('#ptitle').value, body:$('#pbody').value});
+  btn.disabled = false; btn.textContent = 'Screen it';
+  $('#pcard').style.display=''; $('#pout').textContent = r.prescreen || r.err || 'no output';
+  $('#toPipe').style.display = '';
+};
+
+$('#toPipe').onclick = async () => {
+  const company = $('#pcompany').value.trim();
+  if (!company){ flash('#sflash','Enter the company name first.', false); return; }
+  const r = await post('/api/pipeline/add', {
+    company, role:$('#ptitle').value.trim() || 'Untitled role',
+    stage:'screened',
+    posting:$('#pbody').value});
+  if (r.ok){ flash('#sflash','Added to the pipeline under Screened.', true);
+             loadPipe(); loadStatus(); loadToday(); }
+  else flash('#sflash', r.err || 'could not add', false);
+};
+
+// ---- pipeline board ----
+let PIPE = {stages:[], outcomes:[], entries:[]}, SEL = null;
+
+const STAGE_LABEL = {found:'Found', screened:'Screened', scored:'Scored',
+  drafted:'Drafted', sent:'Sent', responded:'Responded',
+  interviewing:'Interviewing', closed:'Closed'};
+
+// One meaning, one colour, used everywhere a score or a stage is shown -
+// instead of each screen inventing its own sense of what counts as good.
+const SCORE_SRC = {auto:'app', fit:'/fit review', manual:'typed by you'};
+const QSTATUS = {covered:['ok','on this CV'], available:['warn','in your data'], gap:['bad','gap']};
+// The app's own score, with every point explained (tools/qualify.py).
+function renderQual(e){
+  const q = e.qualification;
+  if (!q) return '<div class="row"><p class="muted small">No score yet: paste the posting below and it is scored automatically.</p></div>';
+  if (q.score == null) return '<div class="row"><p class="muted small">'+esc(q.why||'')+'</p></div>';
+  let h = '<div class="row"><div><label>How the app scored it: <b class="'+scoreClass(q.score)+'">'+q.score+'</b>'
+    + (e.score_source && e.score_source !== 'auto' ? ' <span class="muted small">(the card shows '+esc(SCORE_SRC[e.score_source])+')</span>' : '')
+    + ' <button class="alt" id="dRescore" style="padding:2px 8px">Rescore</button></label>'
+    + '<table class="small"><tr><th>Part</th><th>Value</th><th>Weight</th><th>Why</th></tr>';
+  (q.parts||[]).forEach(p => {
+    h += '<tr><td>'+esc(p.label)+'</td><td>'+p.value+'</td><td>'+p.weight+'%</td><td>'+esc(p.why)+'</td></tr>';
+    (p.items||[]).forEach(it => {
+      const st = QSTATUS[it.status] || ['',''];
+      h += '<tr><td></td><td colspan="3"><span class="pill '+st[0]+'">'+st[1]+'</span> '
+        + esc(it.text) + (it.nice ? ' <span class="muted">(nice to have)</span>' : '')
+        + (it.note ? '<br><span class="muted">'+esc(it.note)+'</span>' : '') + '</td></tr>';
+    });
+  });
+  h += '</table>';
+  (q.flags||[]).forEach(f => { h += '<p class="small" style="color:var(--warn)">Check first: '+esc(f.note)+'</p>'; });
+  h += '<p class="muted small">Word-level matching against your career data, not a judgement: open each line to check it. '
+    + 'A /fit review, or a number typed above, overrides it.</p></div></div>';
+  return h;
+}
+function scoreClass(score){
+  if (score == null) return '';
+  return score >= 70 ? 'score-good' : score >= 40 ? 'score-ok' : 'score-low';
+}
+function stageClass(stage){
+  if (stage === 'closed') return 'stage-closed';
+  return ['sent','responded','interviewing'].includes(stage) ? 'stage-active' : 'stage-early';
+}
+
+async function loadPipe(){
+  PIPE = await get('/api/pipeline');
+  const board = $('#board'); board.innerHTML = '';
+  PIPE.stages.forEach(st => {
+    const items = PIPE.entries.filter(e => e.stage === st);
+    const col = el('div','col');
+    col.dataset.stage = st;
+    col.innerHTML = '<h3><b>'+STAGE_LABEL[st]+'</b><span>'+items.length+'</span></h3>';
+    items.forEach(e => {
+      const c = el('div','jc' + (SEL === e.id ? ' sel' : ''));
+      c.draggable = true; c.dataset.id = e.id;
+      c.classList.add(stageClass(e.stage));
+      let meta = '';
+      if (e.score != null) meta += '<span class="'+scoreClass(e.score)+'" title="Score: '+esc(SCORE_SRC[e.score_source]||'')+'">fit '+e.score+'</span>';
+      if (e.persona) meta += '<span>'+esc(e.persona)+'</span>';
+      // Documents already made: click to see them without opening the card.
+      const hd = e.has_docs || [];
+      if (hd.includes('cv')) meta += '<span class="docbadge" data-doc="cv" title="View the CV">CV</span>';
+      if (hd.includes('letter')) meta += '<span class="docbadge" data-doc="letter" title="View the cover letter">Letter</span>';
+      else if (hd.includes('letter-draft')) meta += '<span class="docbadge" data-doc="letter-draft" title="View the letter draft">Letter draft</span>';
+      // Without this a rejection and an offer look identical once they land
+      // in Closed, which is how a card sat in the wrong column unnoticed.
+      if (e.outcome && e.outcome !== 'pending')
+        meta += '<span class="'+cls(e.outcome)+'">'+esc(e.outcome)+'</span>';
+      c.innerHTML = '<div class="co">'+esc(e.company)+'</div><div class="ro">'
+        + esc(e.role)+'</div>' + (meta ? '<div class="meta">'+meta+'</div>' : '');
+      c.addEventListener('dragstart', ev => ev.dataTransfer.setData('text/plain', e.id));
+      c.onclick = ev => {
+        const badge = ev.target.closest('[data-doc]');
+        if (badge){ ev.stopPropagation(); openDocsFor(e.id, badge.dataset.doc); return; }
+        SEL = e.id; showDetail(e.id); loadPipe();
+      };
+      col.append(c);
+    });
+    col.addEventListener('dragover', ev => { ev.preventDefault(); col.classList.add('over'); });
+    col.addEventListener('dragleave', () => col.classList.remove('over'));
+    col.addEventListener('drop', async ev => {
+      ev.preventDefault(); col.classList.remove('over');
+      const id = ev.dataTransfer.getData('text/plain');
+      if (!id) return;
+      const r = await post('/api/pipeline/update', {id, patch:{stage: st}});
+      // A refused move used to snap back with no explanation, which looks
+      // exactly like a broken board.
+      if (r && r.ok === false) flash('#bflash', r.err || 'could not move that', false);
+      else $('#bflash').className = 'flash';
+      await loadPipe(); if (SEL === id) showDetail(id);
+      loadStatus(); loadToday();
+    });
+    board.append(col);
+  });
+}
+
+// ---- today ----
+// Jump to a pipeline card from anywhere else in the app. Assumes PIPE is
+// already loaded, which is true after startup since this is only reachable
+// by clicking something that is itself rendered from server data.
+function openEntry(id){
+  showTab('pipe');
+  SEL = id;
+  loadPipe().then(() => showDetail(id));
+}
+
+function todayRow(item, extra){
+  const days = item.days != null ? item.days + (item.days === 1 ? ' day' : ' days') : '';
+  return '<div class="jc '+stageClass(item.stage)+'" style="cursor:pointer" data-open="'+esc(item.id)+'">'
+    + '<div class="co">'+esc(item.company)+'</div>'
+    + '<div class="ro">'+esc(item.role)+'</div>'
+    + '<div class="meta">'
+    + (item.score != null ? '<span class="'+scoreClass(item.score)+'">fit '+item.score+'</span>' : '')
+    + (days ? '<span>'+days+' since touched</span>' : '')
+    + '<span>'+esc(STAGE_LABEL[item.stage] || item.stage)+'</span>'
+    + '</div>'
+    + (extra ? '<div class="muted small" style="margin-top:5px">'+esc(extra)+'</div>' : '')
+    + '</div>';
+}
+
+function wireOpen(container){
+  container.querySelectorAll('[data-open]').forEach(el =>
+    el.onclick = () => openEntry(el.dataset.open));
+}
+
+async function loadToday(){
+  const t = await get('/api/today');
+
+  const nA = t.next_actions || [], nS = t.stale || [], nT = t.top_scored || [];
+  const nW = t.awaiting || [];
+  $('#tCountAwaiting').textContent = nW.length;
+  $('#tCountAwaiting').className = 'pill ' + (nW.length ? 'warn' : 'ok');
+  $('#tAwaiting').innerHTML = nW.length
+    ? nW.map(x => todayRow(x, x.hint)).join('')
+    : '<p class="muted small">Nothing sent is overdue for a reply.</p>';
+  wireOpen($('#tAwaiting'));
+  $('#tCountActions').textContent = nA.length;
+  $('#tCountActions').className = 'pill ' + (nA.length ? 'warn' : 'ok');
+  $('#tActions').innerHTML = nA.length
+    ? nA.map(x => todayRow(x, x.next_action)).join('')
+    : '<p class="muted small">Nothing written down as a next action.</p>';
+
+  $('#tCountStale').textContent = nS.length;
+  $('#tCountStale').className = 'pill ' + (nS.length ? 'warn' : 'ok');
+  $('#tStale').innerHTML = nS.length
+    ? nS.map(x => todayRow(x)).join('')
+    : '<p class="muted small">Nothing has gone quiet.</p>';
+
+  $('#tCountScored').textContent = nT.length;
+  $('#tScored').innerHTML = nT.length
+    ? nT.map(x => todayRow(x)).join('')
+    : '<p class="muted small">Nothing scored and still open. Run a screen or check Sources.</p>';
+
+  const nU = t.unready || [], nN = t.no_next_step || [];
+  $('#tUnreadyCard').style.display = nU.length ? '' : 'none';
+  $('#tCountUnready').textContent = nU.length;
+  $('#tUnready').innerHTML = nU.map(x => todayRow(x, 'fails: ' + (x.fails || []).join(', '))).join('');
+  $('#tCountNoNext').textContent = nN.length;
+  $('#tCountNoNext').className = 'pill ' + (nN.length ? 'warn' : 'ok');
+  $('#tNoNext').innerHTML = nN.length
+    ? nN.map(x => todayRow(x)).join('')
+    : '<p class="muted small">Everything screened has a next step.</p>';
+  wireOpen($('#tUnready')); wireOpen($('#tNoNext'));
+
+  wireOpen($('#tActions')); wireOpen($('#tStale')); wireOpen($('#tScored'));
+
+  const capN = t.captures_pending || 0;
+  $('#tCapturesCard').style.display = capN ? '' : 'none';
+  $('#tCountCaptures').textContent = capN;
+
+  const nothing = !nA.length && !nS.length && !nT.length && !nW.length && !capN && !nU.length && !nN.length;
+  $('#tEmptyCard').style.display = nothing ? '' : 'none';
+  $('#tOpenCount').textContent = t.open_count
+    ? t.open_count + ' open application' + (t.open_count === 1 ? '' : 's') + ' otherwise ticking along fine.'
+    : '';
+}
+$('#tGoToCaptures') && ($('#tGoToCaptures').onclick = () => showTab('pipe'));
+
+// ---- captured postings ----
+// The bookmarklet: reads the current page's own visible text and posts it
+// here. Built from location.origin so it still works if this server ever
+// starts on a port other than 8777 (the "refuse to share a port" fallback).
+(function(){
+  const src = "javascript:(function(){"
+    + "var t=(document.body.innerText||'').slice(0,40000);"
+    + "if(!t.trim()){alert('Nothing readable on this page.');return;}"
+    + "fetch('" + location.origin + "/api/posting/capture',{method:'POST',"
+    + "headers:{'Content-Type':'application/json'},"
+    + "body:JSON.stringify({url:location.href,title:document.title,text:t})})"
+    + ".then(function(r){return r.json()})"
+    + ".then(function(d){alert(d.ok?'Captured. Open the Job Search tab to attach it.':"
+    + "'Capture failed: '+(d.err||'unknown error'))})"
+    + ".catch(function(e){alert('Could not reach the Job Search app. Is it running?')});"
+    + "})();";
+  const a = $('#bookmarklet');
+  if (a){ a.href = src; }
+})();
+
+function guessCompanyRole(title){
+  // Best-effort only; they edits before creating anything from it. Common
+  // ATS page-title shapes: "Role at Company", "Company - Role", "Role | Company".
+  const t = (title || '').trim();
+  let m = t.match(/^(.+?)\s+at\s+(.+)$/i);
+  if (m) return {role: m[1].trim(), company: m[2].trim()};
+  for (const sep of [' - ', ' | ', ' — ']){
+    if (t.includes(sep)){
+      const parts = t.split(sep);
+      return {role: parts[0].trim(), company: parts[parts.length-1].trim()};
+    }
+  }
+  return {role: t, company: ''};
+}
+
+async function loadCaptures(){
+  const d = await get('/api/captures');
+  const rows = d.captures || [];
+  $('#capCount').style.display = rows.length ? '' : 'none';
+  $('#capCount').textContent = rows.length;
+  $('#capCount').className = 'pill ' + (rows.length ? 'warn' : 'ok');
+
+  const entryOpts = (PIPE.entries || []).map(e =>
+    '<option value="'+esc(e.id)+'">'+esc(e.company)+' — '+esc(e.role)+'</option>').join('');
+
+  $('#capList').innerHTML = rows.length ? rows.map(c => {
+    const guess = guessCompanyRole(c.title);
+    return '<div class="card" style="margin-top:8px;padding:10px 12px">'
+      + '<div><b>'+esc(c.title || '(untitled page)')+'</b></div>'
+      + '<div class="muted small">'+(c.origin==='watcher' ? '\u{1f4e1} found by the watcher' : '\u{1f4cc} grabbed from a page')
+      + ' &middot; '+esc(c.url||'')+' &middot; captured '+esc(c.captured_at)+'</div>'
+      + '<div class="row r2" style="margin-top:8px">'
+      + '<div><select id="capSel-'+c.id+'">'
+      + '<option value="">Attach to an existing entry…</option>'+entryOpts+'</select></div>'
+      + '<div style="display:flex;gap:6px">'
+      + '<button class="alt small" data-attach="'+c.id+'">Attach</button>'
+      + '<button class="alt small" data-newco="'+c.id+'">Start new</button>'
+      + '<button class="alt small" data-dismiss="'+c.id+'" style="color:var(--accent)">Dismiss</button>'
+      + '</div></div>'
+      + '<div id="capNew-'+c.id+'" style="display:none;margin-top:8px" class="row r3">'
+      + '<div><input id="capCo-'+c.id+'" placeholder="Company" value="'+esc(guess.company)+'"></div>'
+      + '<div><input id="capRole-'+c.id+'" placeholder="Role" value="'+esc(guess.role)+'"></div>'
+      + '<div><button class="go small" data-create="'+c.id+'">Create</button></div>'
+      + '</div></div>';
+  }).join('') : '<p class="muted small">Nothing captured right now.</p>';
+
+  $('#capList').querySelectorAll('[data-attach]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.attach;
+    const entryId = $('#capSel-'+id).value;
+    if (!entryId){ flash('#bflash', 'Pick an entry to attach it to first.', false); return; }
+    const r = await post('/api/captures/attach', {id, entry_id: entryId});
+    if (r.ok){ flash('#bflash', 'Attached. Open that card and press Build CV.', true);
+               loadCaptures(); if (SEL === entryId) showDetail(entryId); }
+    else flash('#bflash', r.err || 'could not attach', false);
+  });
+  $('#capList').querySelectorAll('[data-newco]').forEach(b => b.onclick = () => {
+    const box = $('#capNew-'+b.dataset.newco);
+    box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+  });
+  $('#capList').querySelectorAll('[data-create]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.create;
+    const company = $('#capCo-'+id).value.trim(), role = $('#capRole-'+id).value.trim();
+    if (!company || !role){ flash('#bflash', 'Company and role are both needed.', false); return; }
+    const r = await post('/api/captures/attach', {id, company, role});
+    if (r.ok){ flash('#bflash', 'Added to the pipeline under Found.', true);
+               await loadPipe(); loadCaptures(); loadStatus(); loadToday(); }
+    else flash('#bflash', r.err || 'could not create the entry', false);
+  });
+  $('#capList').querySelectorAll('[data-dismiss]').forEach(b => b.onclick = async () => {
+    await post('/api/captures/dismiss', {id: b.dataset.dismiss});
+    loadCaptures();
+  });
+}
+
+function renderActivity(activity){
+  const items = activity || [];
+  if (!items.length) return '<p class="muted small">Nothing logged yet.</p>';
+  // Newest first: what happened most recently is what you came here to add to.
+  return '<ul class="activity-list">' + items.slice().reverse().map(a =>
+    '<li><span class="activity-date">'+esc(a.date)+'</span> '+esc(a.text)+'</li>'
+  ).join('') + '</ul>';
+}
+
+function showDetail(id){
+  const e = PIPE.entries.find(x => x.id === id);
+  const d = $('#detail');
+  if (!e){ d.style.display = 'none'; return; }
+  d.style.display = '';
+  const opts = PIPE.outcomes.map(o =>
+    '<option value="'+esc(o)+'"'+(o===(e.outcome||'')?' selected':'')+'>'+(o||'(none)')+'</option>').join('');
+  const stageOpts = PIPE.stages.map(s =>
+    '<option value="'+s+'"'+(s===e.stage?' selected':'')+'>'+STAGE_LABEL[s]+'</option>').join('');
+  d.innerHTML =
+    '<h2>'+esc(e.company)+' &mdash; '+esc(e.role)+'</h2>'
+    + '<div class="row r4">'
+    + '<div><label>Stage</label><select id="dStage">'+stageOpts+'</select></div>'
+    + '<div><label>Outcome</label><select id="dOutcome">'+opts+'</select></div>'
+    + '<div><label title="Computed by the app from the posting unless a /fit review or you set it. Clear it to go back to the app\'s score.">Score '
+    + '<span class="muted small">('+esc(SCORE_SRC[e.score_source]||'none yet')+')</span></label>'
+    + '<input id="dScore" type="number" value="'+(e.score??'')+'"></div>'
+    + '</div><div id="dDocs" class="row"></div>' + renderQual(e) + '<div class="row r2">'
+    + '<div><label>Link</label><input id="dUrl" value="'+esc(e.url||'')+'"></div>'
+    + '<div><label>Next action</label><input id="dNext" value="'+esc(e.next_action||'')+'"></div>'
+    + '</div><div class="row"><div><label>Notes</label>'
+    + '<textarea id="dNotes" style="min-height:90px">'+esc(e.notes||'')+'</textarea></div></div>'
+    + '<div class="row"><div><label>Activity &mdash; what actually happened, in order</label>'
+    + '<div id="dActivity" class="activity-log">' + renderActivity(e.activity) + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:6px">'
+    + '<input id="dLogText" placeholder="e.g. Recruiter called, phone screen booked for Thursday" style="flex:1">'
+    + '<button class="alt" id="dLogBtn">Log</button></div>'
+    + '</div></div>'
+    + '<div class="row"><div><label>Paste the posting here. It drives the suggested base, '
+    + 'dials and requirements, and puts their own words into the letter</label>'
+    + '<textarea id="dPosting" style="min-height:120px" placeholder="Paste the full job '
+    + 'advert. Saved to the application folder, so you only do this once."></textarea>'
+    + '</div></div>'
+    + '<button class="go" id="dBuild">Build CV</button> '
+    + '<button class="alt" id="dDeadline" title="Suggested setup, straight to a checked CV and a drafted letter">Deadline mode</button> '
+    + '<button class="alt" id="dSave">Save</button> '
+    + '<button class="alt" id="dClose">Close</button> '
+    + '<button class="alt" id="dReportWrong" style="color:var(--warn)">Report as wrong</button> '
+    + '<button class="alt" id="dDel" style="color:var(--accent)">Delete</button>'
+    + linkOrText(e.url)
+    + '<div id="dflash" class="flash"></div>'
+    + '<div id="dApply" style="display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:14px"></div>'
+    + '<div id="ws" style="margin-top:12px"></div>';
+  loadWorkspace(id);
+  // Prefill the paste box if a posting was already saved for this entry, from
+  // the Screen tab or from an earlier Prepare, instead of asking a third time.
+  get('/api/posting?id=' + encodeURIComponent(id)).then(p => {
+    if (p.ok && p.posting) $('#dPosting').value = p.posting;
+  });
+
+  const logIt = async () => {
+    const text = $('#dLogText').value.trim();
+    if (!text) return;
+    const btn = $('#dLogBtn'); btn.disabled = true;
+    const r = await post('/api/pipeline/log', {id, text});
+    btn.disabled = false;
+    if (!r.ok){ flash('#dflash', r.err || 'could not log that', false); return; }
+    // Update in place rather than a full loadPipe()+showDetail() round trip,
+    // so the cursor is not yanked out of whatever else is being edited.
+    const idx = PIPE.entries.findIndex(x => x.id === id);
+    if (idx >= 0) PIPE.entries[idx] = r.entry;
+    $('#dActivity').innerHTML = renderActivity(r.entry.activity);
+    $('#dLogText').value = '';
+  };
+  $('#dLogBtn').onclick = logIt;
+  $('#dLogText').addEventListener('keydown', ev => { if (ev.key === 'Enter') logIt(); });
+
+  // The new builder. It fetches the posting itself when none is saved, and
+  // uses the paste box's text when there is some.
+  $('#dBuild').onclick = async () => {
+    const pasted = $('#dPosting') ? $('#dPosting').value.trim() : '';
+    if (pasted){ const sv = await post('/api/posting/save', {id, posting: pasted});
+      if (!sv.ok){ flash('#dflash', sv.err || 'could not save the posting', false); return; } }
+    openBuild(id);
+  };
+  $('#dDeadline').onclick = async () => {
+    if (!confirm('Deadline mode: take the suggested setup as it is, build and check the CV, then draft and render the letter (a few minutes). Continue?')) return;
+    const pasted = $('#dPosting') ? $('#dPosting').value.trim() : '';
+    if (pasted){ const sv = await post('/api/posting/save', {id, posting: pasted});
+      if (!sv.ok){ flash('#dflash', sv.err || 'could not save the posting', false); return; } }
+    deadlineMode(id);
+  };
+
+  if ($('#dRescore')) $('#dRescore').onclick = async () => {
+    const r = await post('/api/pipeline/qualify', {id});
+    if (r.ok){ await loadPipe(); showDetail(id); } else flash('#dflash', r.err, false);
+  };
+  $('#dSave').onclick = async () => {
+    const num = v => v === '' ? null : Number(v);
+    const r = await post('/api/pipeline/update', {id, patch:{
+      stage:$('#dStage').value, outcome:$('#dOutcome').value,
+      score:num($('#dScore').value),
+      url:$('#dUrl').value, next_action:$('#dNext').value, notes:$('#dNotes').value}});
+    if (r.ok){ await loadPipe(); showDetail(id); loadStatus(); loadToday(); }
+  };
+  $('#dClose').onclick = () => { SEL = null; d.style.display='none'; loadPipe(); };
+  $('#dDel').onclick = async () => {
+    if (!confirm('Remove '+e.company+' from the pipeline? This rewrites the log.')) return;
+    await post('/api/pipeline/delete', {id});
+    SEL = null; d.style.display='none'; await loadPipe(); loadStatus(); loadToday();
+  };
+  $('#dReportWrong').onclick = async () => {
+    const reason = prompt('Why is this wrong? (e.g. "wrong industry", "requires military service", '
+      + '"nothing to do with my CV") - this gets logged so the search terms can actually be fixed:');
+    if (reason === null) return;
+    const r = await post('/api/pipeline/report-wrong', {id, reason});
+    if (!r.ok){ flash('#dflash', r.err || 'could not log that', false); return; }
+    await loadPipe(); showDetail(id); loadStatus(); loadToday();
+  };
+}
+
+$('#addBtn').onclick = async () => {
+  const r = await post('/api/pipeline/add', {
+    company:$('#acompany').value, role:$('#arole').value, url:$('#aurl').value});
+  if (r.ok){ $('#acompany').value=$('#arole').value=$('#aurl').value='';
+             flash('#aflash','Added.', true); await loadPipe(); loadStatus(); loadToday(); }
+  else flash('#aflash', r.err || 'could not add', false);
+};
+
+// ---- sources ----
+async function loadSources(){
+  const s = await get('/api/sources');
+  const rows = s.sources || [];
+  $('#srclist').innerHTML = '<table><tr><th>Company</th><th>ATS</th><th>Slug</th>'
+    + '<th>Note</th><th>Polled</th></tr>'
+    + rows.map((x,i) => '<tr'+(x.enabled===false?' style="opacity:.5"':'')
+      + '><td><b>'+esc(x.company)+'</b></td><td>'+esc(x.ats)
+      + '</td><td class="muted">'+esc(x.slug||'')+'</td><td class="muted small">'
+      + esc(x.note||'')+'</td><td><button class="alt small" data-src="'+i+'"'
+      + ' style="padding:2px 8px">'+(x.enabled===false?'off':'on')+'</button></td></tr>').join('')
+    + '</table>'
+    + '<p class="hint" style="margin-top:8px">'+rows.filter(x=>x.enabled!==false).length
+    + ' of '+rows.length+' polled. '+s.seen_total+' roles seen and recorded so far.</p>';
+  $('#srclist').querySelectorAll('button[data-src]').forEach(b => b.onclick = async () => {
+    const x = rows[+b.dataset.src];
+    b.disabled = true;
+    const r = await post('/api/sources/toggle', {ats:x.ats, slug:x.slug||'',
+                                                 enabled: x.enabled===false});
+    if (r.ok) loadSources(); else { b.disabled = false; b.textContent = 'err'; }
+  });
+  $('#srcmissing').textContent = (s.not_found||[]).join(' · ')
+    + '  —  open the careers page and watch which host it fetches from.';
+}
+
+function renderHits(d){
+  const box = $('#srcres');
+  if (!d.ok){ box.innerHTML = '<pre>'+esc(d.err||'failed')+'</pre>'; return; }
+  const hits = d.new || [];
+  if (!hits.length){
+    box.innerHTML = '<p class="muted">Checked '+d.checked+' sources. Nothing new that fits.</p>'
+      + ((d.errors||[]).length ? '<pre>'+esc(JSON.stringify(d.errors))+'</pre>' : '');
+    return;
+  }
+  box.innerHTML = '<p class="muted small">Checked '+d.checked+' sources, '+hits.length+' new.</p>'
+    + hits.map((h,i) =>
+      '<div class="jc" style="cursor:default"><div class="co">'+esc(h.company)+'</div>'
+      + '<div class="ro">'+esc(h.title)+'</div>'
+      + '<div class="meta"><span>'+esc(h.location||'location not given')+'</span>'
+      + '<span>'+esc(h.location_class||'')+'</span>'
+      + '<span>'+esc((h.matched||[]).join(', '))+'</span></div>'
+      + '<div style="margin-top:7px">'
+      + linkOrText(h.url)
+      + '<button class="alt small" data-i="'+i+'" style="padding:3px 9px">Add to pipeline</button>'
+      + '</div></div>').join('');
+  box.querySelectorAll('button[data-i]').forEach(b => b.onclick = async () => {
+    const h = hits[+b.dataset.i];
+    const r = await post('/api/pipeline/add', {company:h.company, role:h.title,
+                                               url:h.url, stage:'found'});
+    b.textContent = r.ok ? 'Added' : (r.err||'failed'); b.disabled = true;
+    if (r.ok){ loadPipe(); loadStatus(); loadToday(); }
+  });
+}
+
+async function runSources(all){
+  const btn = all ? $('#runSrcAll') : $('#runSrc');
+  const label = btn.textContent; btn.disabled = true; btn.textContent = 'Checking...';
+  const d = await post('/api/sources/run', {all, anywhere: $('#anywhere').checked});
+  btn.disabled = false; btn.textContent = label;
+  renderHits(d); loadSources();
+}
+$('#runSrc').onclick = () => runSources(false);
+$('#runSrcAll').onclick = () => runSources(true);
+
+$('#discBtn').onclick = async () => {
+  const name = $('#discName').value.trim();
+  if (!name) return;
+  const btn = $('#discBtn'); btn.disabled = true; btn.textContent = 'Looking...';
+  const d = await post('/api/sources/discover', {company:name});
+  btn.disabled = false; btn.textContent = 'Find its job board';
+  const f = d.found || [];
+  $('#discres').innerHTML = !d.ok ? '<pre>'+esc(d.err)+'</pre>'
+    : (f.length ? '<table><tr><th>ATS</th><th>Slug</th><th>Roles</th><th>Sample</th><th></th></tr>'
+        + f.map((x,i) => '<tr><td><b>'+esc(x.ats)+'</b></td><td>'+esc(x.slug)+'</td><td>'
+            + x.roles+'</td><td class="muted small">'+esc((x.sample||[]).join('; '))
+            + '</td><td><button data-keep="'+i+'" style="padding:3px 10px">Keep</button>'
+            + '</td></tr>').join('')
+        + '</table><p class="hint">Keeping it verifies the endpoint again and writes it '
+        + 'to <code>profile/sources.json</code>, so the next check includes it.</p>'
+      : '<p class="muted">No public endpoint answered, and the name is now on the '
+        + 'not-found list. Open the careers page and watch which host it fetches from.</p>');
+  $('#discres').querySelectorAll('button[data-keep]').forEach(b => b.onclick = async () => {
+    const x = f[+b.dataset.keep];
+    b.disabled = true; b.textContent = 'Checking...';
+    const r = await post('/api/sources/add', {company:name, ats:x.ats, slug:x.slug,
+                                              note:'Added from the UI. '+x.roles+' roles at discovery.'});
+    b.textContent = r.ok ? 'Kept' : 'Not added';
+    if (r.ok) loadSources();
+    else { b.title = r.err || ''; flash('#discflash', r.err || 'could not add', false); }
+  });
+};
+
+async function loadWorkspace(id){
+  const w = await get('/api/workspace?id='+encodeURIComponent(id));
+  const docsBox = $('#dDocs');
+  if (docsBox){
+    const docs = w.docs || [];
+    docsBox.innerHTML = '<div><label>Documents</label>' + (docs.length
+      ? docs.map((d, i) => '<button class="alt docbtn" data-di="'+i+'">'+esc(d.label)+'</button>').join(' ')
+      : '<span class="muted small">No CV or letter made yet. Build CV creates them.</span>') + '</div>';
+    docsBox.querySelectorAll('[data-di]').forEach(b => b.onclick = () => openViewer(docs, +b.dataset.di));
+  }
+  const box = $('#ws'); if (!box) return;
+  const postingLink = w.url
+    ? '<p class="hint" style="margin-bottom:8px">Job posting:'+linkOrText(w.url)+'</p>'
+    : '<p class="hint" style="margin-bottom:8px">No link on record for this posting - '
+      + 'add one in the Link field above so you can get back to it later.</p>';
+  if (!w.exists){
+    box.innerHTML = postingLink + '<p class="hint">No application folder yet. Render a CV '
+      + 'with the output folder set to <code>applications/'+esc(id)+'</code> and the files '
+      + 'will appear here.</p>';
+    return;
+  }
+  box.innerHTML = postingLink + '<h2 style="margin-bottom:6px">Files</h2><table>'
+    + w.files.map(f => '<tr><td>'+esc(f.name)+'</td><td class="muted">'+f.kb
+      + ' KB</td><td>'+(f.status ? '<span class="pill '+(f.status==='accepted'?'ok':'warn')+'">'+esc(f.status)+'</span>' : '')
+      + '</td><td><button class="alt small" data-p="'+esc(f.path)
+      + '" style="padding:2px 8px">Open</button></td></tr>').join('')
+    + '</table><p class="hint" style="margin-top:6px">'
+    + '<button class="alt small" data-p="'+esc(w.dir)+'" style="padding:2px 8px">Open folder</button></p>';
+  box.querySelectorAll('button[data-p]').forEach(b =>
+    b.onclick = () => post('/api/open', {path:b.dataset.p}));
+}
+
+// ---- career data ----
+let CAREER = null;
+
+async function loadCareer(){
+  CAREER = await get('/api/career');
+  const d = CAREER;
+  $('#roles').innerHTML = d.roles.map(r => {
+    const when = [r.start, r.end].filter(Boolean).join(' to ') || 'undated';
+    const bl = r.bullets.map((b,i) => '<li data-role="'+esc(r.id)+'" data-idx="'+i+'">'
+        + '<span class="btext">'+esc(b.text)+'</span> '
+        + '<span class="pill">s'+b.strength+'</span> <span class="muted">'
+        + esc((b.tags||[]).join(', '))+'</span><br>'
+        + (b.text_de ? '<span class="muted small">DE: '+esc(b.text_de)+'</span> '
+                     : '<span class="muted small" style="font-style:italic">no German yet</span> ')
+        + '<button class="alt small" data-editb="1">Edit</button> '
+        + '<button class="alt small" data-editde="1">Edit German</button> '
+        + '<button class="alt small" data-delb="1" style="color:var(--accent)">Delete</button>'
+        + '</li>').join('');
+    const nd = r.needs.length ? '<p class="small" style="color:var(--warn)">'
+      + r.needs.map(esc).join('<br>') + '</p>' : '';
+    return '<details><summary><b>'+esc(r.title)+'</b>, '+esc(r.org)+' <span class="muted">'
+      + esc(when)+'</span> <span class="pill">'+r.bullets.length+'</span></summary>'
+      + nd + '<ul class="small">'+bl+'</ul>'
+      + '<div style="display:flex;gap:6px;margin-top:6px">'
+      + '<input data-newbullet="'+esc(r.id)+'" placeholder="Add a bullet for this role" style="flex:1">'
+      + '<input data-newbulletde="'+esc(r.id)+'" placeholder="German version (optional)" style="flex:1">'
+      + '<button class="alt small" data-addbullet="'+esc(r.id)+'">Add</button></div>'
+      + threadBoxes('nbt-' + r.id, [...new Set(r.bullets.flatMap(b => b.threads || []))])
+      + '</details>';
+  }).join('');
+
+  $('#roles').querySelectorAll('[data-editb]').forEach(btn => btn.onclick = () => {
+    const li = btn.closest('li'); const span = li.querySelector('.btext');
+    const cur = span.textContent;
+    const val = prompt('Edit this bullet:', cur);
+    if (val == null || val.trim() === cur.trim()) return;
+    post('/api/career/bullet/update', {role_id: li.dataset.role, index: +li.dataset.idx, text: val.trim()})
+      .then(r => { if (r.ok) loadCareer(); else alert(r.err || 'could not save'); });
+  });
+  $('#roles').querySelectorAll('[data-editde]').forEach(btn => btn.onclick = () => {
+    const li = btn.closest('li');
+    const cur = (CAREER.roles.find(r => r.id === li.dataset.role).bullets[+li.dataset.idx] || {}).text_de || '';
+    const val = prompt('German version of this bullet (leave blank to clear it, so it falls back to English):', cur);
+    if (val == null) return;
+    post('/api/career/bullet/update', {role_id: li.dataset.role, index: +li.dataset.idx, text_de: val.trim()})
+      .then(r => { if (r.ok) loadCareer(); else alert(r.err || 'could not save'); });
+  });
+  $('#roles').querySelectorAll('[data-delb]').forEach(btn => btn.onclick = () => {
+    const li = btn.closest('li');
+    if (!confirm('Delete this bullet?')) return;
+    post('/api/career/bullet/update', {role_id: li.dataset.role, index: +li.dataset.idx, delete: true})
+      .then(r => { if (r.ok) loadCareer(); });
+  });
+  $('#roles').querySelectorAll('[data-addbullet]').forEach(btn => btn.onclick = () => {
+    const input = $('input[data-newbullet="'+btn.dataset.addbullet+'"]');
+    const deInput = $('input[data-newbulletde="'+btn.dataset.addbullet+'"]');
+    const text = input.value.trim(); if (!text) return;
+    const text_de = deInput.value.trim();
+    const threads = checkedThreads('nbt-' + btn.dataset.addbullet);
+    if (!threads.length && !confirm('No thread ticked: the CV builder will never select this bullet. Add it anyway?')) return;
+    post('/api/career/bullet', {role_id: btn.dataset.addbullet, text, text_de, threads}).then(r => {
+      if (r.ok) loadCareer(); else alert(r.err || 'could not add');
+    });
+  });
+
+  $('#certThreads').innerHTML = threadBoxes('certt', []);
+  $('#certList').innerHTML = '<table><tr><th>Name</th><th>Issuer</th><th>Year</th><th></th></tr>'
+    + d.certifications.map(c => '<tr><td><b>'+esc(c.name)+'</b></td>'
+      + '<td class="muted small">'+esc(c.issuer||'')+'</td>'
+      + '<td class="muted small">'+esc(c.year||'')+'</td>'
+      + '<td><button class="alt small" data-delc="'+esc(c.id)+'" style="color:var(--accent)">Delete</button></td></tr>').join('')
+    + '</table>';
+  $('#certList').querySelectorAll('[data-delc]').forEach(b => b.onclick = async () => {
+    if (!confirm('Delete this certification?')) return;
+    await post('/api/career/certification/delete', {id: b.dataset.delc});
+    loadCareer();
+  });
+
+  $('#skills').innerHTML = Object.entries(d.skills).map(([key,c]) => {
+    const itemsDe = c.items_de || [];
+    return '<div style="margin-bottom:12px"><p style="margin:0 0 5px"><b>'+esc(c.label)+'</b></p>'
+    + '<div data-cluster="'+esc(key)+'">' + (c.items||[]).map((i,idx) => {
+        const de = itemsDe[idx] || '';
+        const tip = de ? ('DE: ' + de + ' — click to remove') : 'No German yet — click to remove';
+        return '<span class="pill" style="margin:2px 4px 2px 0;cursor:pointer" data-rmskill="'+esc(i)+'" data-cl="'+esc(key)+'" title="'+esc(tip)+'">'
+          +esc(i)+(de?'':' ⚠')+' &times;</span>';
+      }).join('')
+    + '</div>'
+    + '<div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">'
+    + '<input data-newskill="'+esc(key)+'" placeholder="Add (English)" style="max-width:180px">'
+    + '<input data-newskillde="'+esc(key)+'" placeholder="German (optional)" style="max-width:180px">'
+    + '<button class="alt small" data-addskill="'+esc(key)+'">Add</button>'
+    + '<span class="muted small" style="align-self:center">&#9888; = no German yet</span>'
+    + '</div></div>';
+  }).join('');
+  $('#skills').querySelectorAll('[data-rmskill]').forEach(el => el.onclick = async () => {
+    await post('/api/career/skill', {cluster: el.dataset.cl, item: el.dataset.rmskill, op:'remove'});
+    loadCareer();
+  });
+  $('#skills').querySelectorAll('[data-addskill]').forEach(btn => btn.onclick = async () => {
+    const input = $('input[data-newskill="'+btn.dataset.addskill+'"]');
+    const deInput = $('input[data-newskillde="'+btn.dataset.addskill+'"]');
+    const item = input.value.trim(); if (!item) return;
+    await post('/api/career/skill', {cluster: btn.dataset.addskill, item, item_de: deInput.value.trim(), op:'add'});
+    loadCareer();
+  });
+}
+// Thread checkboxes for a new bullet or certification. The builder selects by
+// thread, so something saved with none would never appear on a CV.
+function threadBoxes(group, checked){
+  const threads = (CAREER && CAREER.threads) || [];
+  return '<div class="small" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 12px">'
+    + '<span class="muted">Threads:</span>'
+    + threads.map(t => '<label style="display:inline-flex;gap:4px;align-items:center;margin:0">'
+      + '<input type="checkbox" style="width:auto" data-tgroup="'+esc(group)+'" value="'+esc(t.id)+'"'
+      + (checked.includes(t.id) ? ' checked' : '') + ' title="'+esc(t.id)+'">' + esc(t.label)
+      + (t.base === 'service' ? ' <span class="muted">(service CV)</span>' : '') + '</label>').join('')
+    + '</div>';
+}
+function checkedThreads(group){
+  return [...document.querySelectorAll('input[data-tgroup="'+group+'"]:checked')].map(i => i.value);
+}
+$('#certAdd').onclick = async () => {
+  const name = $('#certName').value.trim();
+  if (!name){ flash('#certFlash','Enter a name.', false); return; }
+  const threads = checkedThreads('certt');
+  if (!threads.length){ flash('#certFlash','Tick at least one thread, or the CV builder will never show it.', false); return; }
+  const r = await post('/api/career/certification', {
+    name, issuer: $('#certIssuer').value.trim(), year: $('#certYear').value.trim(), threads});
+  if (r.ok){ $('#certName').value=$('#certIssuer').value=$('#certYear').value=''; loadCareer(); }
+  else flash('#certFlash', r.err || 'could not add', false);
+};
+
+// ---- watchlist ----
+async function loadWatch(){
+  const w = await get('/api/watchlist');
+  const t = w.search_terms || {};
+  $('#terms').innerHTML = '<p><b>Primary:</b> '+esc((t.primary||[]).join(', '))+'</p>'
+    + '<p><b>Secondary:</b> '+esc((t.secondary||[]).join(', '))+'</p>'
+    + '<p><b>Avoid:</b> <span class="muted">'+esc(((t.avoid||{}).terms||[]).join(' &middot; '))+'</span></p>';
+  $('#cats').innerHTML = w.categories.map(c =>
+    '<div class="card"><h2>'+esc(c.id)+' <span class="pill">priority '+c.priority+'</span></h2>'
+    + '<p class="small muted">'+esc(c.why)+'</p>'
+    + '<p class="small"><b>Roles:</b> '+esc((c.roles||[]).join(', '))+'</p>'
+    + '<table>' + c.companies.map(co => '<tr><td><b>'+esc(co.name)+'</b></td><td class="muted">'
+        + esc(co.hq||'') + '</td><td class="muted small">'+esc(co.note||'')+'</td></tr>').join('')
+    + '</table></div>').join('');
+  $('#streams').innerHTML = (w.income_streams||[]).map(s => '<li>'+esc(s)+'</li>').join('');
+}
+
+// ---- settings ----
+let SETTINGS = null;
+
+async function loadSettings(){
+  SETTINGS = await get('/api/settings');
+  const a = SETTINGS.availability;
+  $('#setPlz').value = a.home_plz || '';
+  $('#setRadius').value = a.radius_km ?? '';
+  $('#setFloor').value = a.floor_gross_monthly ?? '';
+  $('#setShiftsYes').value = (a.shifts_yes || []).join('\n');
+  $('#setShiftsNo').value = (a.shifts_no || []).join('\n');
+
+  const th = SETTINGS.thresholds;
+  $('#setGood').value = th.score_good_min;
+  $('#setOk').value = th.score_ok_min;
+  $('#setStale').value = th.stale_days;
+
+  const pillList = (id, list, onRemove) => {
+    $(id).innerHTML = list.length ? list.map(t =>
+      '<span class="pill" style="margin:2px 4px 2px 0;cursor:pointer" data-t="'+esc(t)+'" title="Click to remove">'
+      + esc(t) + ' &times;</span>').join('') : '<span class="muted small">None yet.</span>';
+    $(id).querySelectorAll('[data-t]').forEach(el => el.onclick = () => onRemove(el.dataset.t));
+  };
+  pillList('#setTermsPrimary', SETTINGS.watchlist.search_terms.primary,
+    t => settingsTerm('primary', 'remove', t));
+  pillList('#setTermsSecondary', SETTINGS.watchlist.search_terms.secondary,
+    t => settingsTerm('secondary', 'remove', t));
+
+  const catSel = $('#setCoCategory');
+  catSel.innerHTML = SETTINGS.watchlist.categories.map(c =>
+    '<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+
+  const companies = SETTINGS.watchlist.companies.slice()
+    .sort((a,b) => a.category.localeCompare(b.category) || a.company.localeCompare(b.company));
+  $('#setCompanies').innerHTML = '<table><tr><th>Company</th><th>Category</th><th></th></tr>'
+    + companies.map(c => '<tr><td><b>'+esc(c.company)+'</b>'
+      + (c.domain ? ' <span class="muted small">'+esc(c.domain)+'</span>' : '')+'</td>'
+      + '<td class="muted small">'+esc(c.category)+'</td>'
+      + '<td><button class="alt small" data-rmco="'+esc(c.company)+'" style="color:var(--accent)">Remove</button></td></tr>').join('')
+    + '</table>';
+  $('#setCompanies').querySelectorAll('[data-rmco]').forEach(b => b.onclick = async () => {
+    await post('/api/settings/company', {op:'remove', company:b.dataset.rmco});
+    loadSettings();
+  });
+
+}
+
+async function settingsTerm(list, op, term){
+  const r = await post('/api/settings/term', {list, op, term});
+  if (r.ok) loadSettings();
+}
+
+$('#setAvailSave').onclick = async () => {
+  const r = await post('/api/settings/availability', {
+    home_plz: $('#setPlz').value, radius_km: $('#setRadius').value,
+    floor_gross_monthly: $('#setFloor').value,
+    shifts_yes: $('#setShiftsYes').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    shifts_no: $('#setShiftsNo').value.split('\n').map(s=>s.trim()).filter(Boolean)});
+  flash('#setAvailFlash', r.ok ? 'Saved.' : (r.err||'could not save'), r.ok);
+  if (r.ok){ loadToday(); }
+};
+$('#setThreshSave').onclick = async () => {
+  const r = await post('/api/settings/thresholds', {
+    score_good_min: $('#setGood').value, score_ok_min: $('#setOk').value, stale_days: $('#setStale').value});
+  flash('#setThreshFlash', r.ok ? 'Saved.' : (r.err||'could not save'), r.ok);
+  if (r.ok){ loadToday(); loadPipe(); }
+};
+$('#setTermBtnPrimary').onclick = () => {
+  const v = $('#setTermAddPrimary').value.trim(); if (!v) return;
+  $('#setTermAddPrimary').value = ''; settingsTerm('primary','add',v);
+};
+$('#setTermBtnSecondary').onclick = () => {
+  const v = $('#setTermAddSecondary').value.trim(); if (!v) return;
+  $('#setTermAddSecondary').value = ''; settingsTerm('secondary','add',v);
+};
+$('#setCoAdd').onclick = async () => {
+  const company = $('#setCoName').value.trim();
+  if (!company){ flash('#setCoFlash','Enter a company name.', false); return; }
+  const r = await post('/api/settings/company', {
+    company, domain:$('#setCoDomain').value.trim(), category:$('#setCoCategory').value, op:'add'});
+  if (r.ok){ $('#setCoName').value = $('#setCoDomain').value = ''; loadSettings(); }
+  else flash('#setCoFlash', r.err || 'could not add', false);
+};
+
+loadStatus(); loadSources(); loadCareer(); loadWatch(); loadSettings();
+// Captures' entry dropdown reads PIPE, so it waits for the pipeline to load
+// rather than racing it and rendering with an empty options list.
+loadPipe().then(loadCaptures);
+loadToday();
+
+// ---- leave a note ----
+// Always present, independent of whatever tab is open, so a problem can be
+// recorded the moment it happens rather than remembered later and described
+// from memory. Captures which screen and, if a pipeline entry is open, which
+// one - so reading the note back later does not need to guess the context.
+async function refreshNoteCount(){
+  try {
+    const d = await get('/api/notes/count');
+    const n = d.count || 0;
+    $('#noteCount').style.display = n ? '' : 'none';
+    $('#noteCount').textContent = n;
+  } catch(e){}
+}
+$('#noteFab').onclick = () => {
+  const box = $('#notePanel');
+  box.style.display = box.style.display === 'none' ? '' : 'none';
+  if (box.style.display !== 'none') $('#noteText').focus();
+};
+$('#noteCancel').onclick = () => { $('#notePanel').style.display = 'none'; };
+$('#noteSubmit').onclick = async () => {
+  const text = $('#noteText').value.trim();
+  if (!text) return;
+  const activeTab = document.querySelector('nav button.on');
+  let context = '';
+  if (SEL){
+    const e = (PIPE.entries||[]).find(x => x.id === SEL);
+    if (e) context = e.company + ' — ' + e.role;
+  }
+  const btn = $('#noteSubmit'); btn.disabled = true;
+  const r = await post('/api/notes/add', {
+    text, tab: activeTab ? activeTab.textContent : '', context});
+  btn.disabled = false;
+  if (r.ok){
+    $('#noteText').value = '';
+    $('#notePanel').style.display = 'none';
+    refreshNoteCount();
+  } else {
+    flash('#noteFlash', r.err || 'could not save that', false);
+  }
+};
+refreshNoteCount();
+
+// ---- Build panel (plans/cv-builder.md) ----
+// One application's CV: a base, a Lead thread and dials, per-bullet choices,
+// a live preview. The spec is the single state; everything renders from it.
+let B = null;          // the payload from /api/build/state
+let BSPEC = null;      // the spec being edited
+let BTIMER = null;
+const LEVELS = ['lead','strong','light','off'];
+const LEVEL_LABEL = {lead:'Lead', strong:'Strong', light:'Light', off:'Off'};
+
+async function openBuild(id, fresh){
+  showTab('build');
+  $('#topbarTitle').textContent = 'Build CV';
+  $('#topbarSub').textContent = 'Two bases, thread dials, a live preview';
+  $('#bResult').style.display = 'none';
+  $('#bflash').className = 'flash';
+  $('#bTitle').textContent = 'Loading...';
+  const r = await post('/api/build/state', {id, fresh: !!fresh});
+  if (!r.ok){ flash('#bflash', r.err || 'could not open the builder', false); return; }
+  B = r; B.id = id; BSPEC = JSON.parse(JSON.stringify(r.spec));
+  B.letter = r.letter || null;
+  $('#bLetterOut').style.display = 'none'; $('#bLetterPdf').style.display = 'none';
+  $('#bTitle').textContent = r.company + ' — ' + (r.spec.headline || r.role);
+  if (r.posting_note) flash('#bflash', 'No posting text: ' + r.posting_note + ' Suggestions fall back to defaults.', false);
+  else if (r.saved) flash('#bflash', 'Your saved setup for this application. Re-suggest starts over from the posting.', true);
+  renderBuild();
+  syncSummaryBox();
+  schedulePreview(0);
+}
+
+// The app speaks English whatever language the CV is in: controls that
+// switched to German with the CV were harder to use, not easier.
+function threadLabel(t){ return t.label; }
+
+function setDial(tid, level){
+  const d = BSPEC.dials;
+  if (level === 'lead'){
+    // Exactly one Lead: the old one steps down to Strong if there is room, else Light.
+    Object.keys(d).forEach(k => { if (d[k] === 'lead' && k !== tid){
+      const strong = Object.values(d).filter(v => v === 'strong').length;
+      d[k] = strong < B.max_strong ? 'strong' : 'light'; }});
+  } else if (d[tid] === 'lead'){
+    flash('#bflash', 'Pick another thread as Lead first: every CV needs exactly one.', false);
+    return;
+  }
+  if (level === 'strong' && d[tid] !== 'strong'){
+    const strong = Object.values(d).filter(v => v === 'strong').length;
+    if (strong >= B.max_strong){
+      flash('#bflash', 'At most ' + B.max_strong + ' threads can be Strong. Turning everything up is ' +
+            'what makes a CV read as unfocused: set one of the others to Light first.', false);
+      return;
+    }
+  }
+  d[tid] = level;
+  renderBuild(); schedulePreview();
+}
+
+function dialRow(t){
+  const cur = BSPEC.dials[t.id] || 'off';
+  const why = (B.suggestion && B.suggestion.reasons && B.suggestion.reasons[t.id]) || t.description;
+  return '<div class="dial"><div class="name" title="'+esc(t.description)+'">'+esc(threadLabel(t))+'</div>'
+    + '<div class="seg small">' + LEVELS.map(l =>
+        '<button data-t="'+t.id+'" data-l="'+l+'" class="'+(cur===l?'on':'')+'">'+LEVEL_LABEL[l]+'</button>').join('')
+    + '</div><div class="why">'+esc(why)
+    + ((B.hints && B.hints[t.id]) ? '<div style="color:var(--blue)">'+esc(B.hints[t.id])+'</div>' : '')
+    + '</div></div>';
+}
+
+function renderBuild(){
+  // base
+  $('#bBase').innerHTML = Object.entries(B.bases).map(([k,v]) =>
+    '<button data-v="'+k+'" class="'+(BSPEC.base===k?'on':'')+'">'+esc(v.label)+'</button>').join('');
+  $('#bBase').querySelectorAll('button').forEach(b => b.onclick = () => switchBase(b.dataset.v));
+  $('#bBaseWhy').textContent = B.suggestion ? 'Suggested: ' + B.suggestion.spec.base + ' (' + B.suggestion.base_reason + ')' : '';
+  $('#bLang').querySelectorAll('button').forEach(b => {
+    b.classList.toggle('on', b.dataset.v === BSPEC.lang);
+    b.onclick = () => { BSPEC.lang = b.dataset.v; renderBuild(); schedulePreview(); };
+  });
+  $('#bLangWhy').textContent = B.suggestion ? B.suggestion.lang_reason : '';
+  $('#bHeadline').value = BSPEC.headline || '';
+  $('#bPhotoRow').style.display = (B.bases[BSPEC.base].photo_allowed && B.photo_available) ? '' : 'none';
+  $('#bPhoto').checked = !!BSPEC.photo;
+  $('#bPagesSel').value = String((BSPEC.advanced || {}).max_pages || '');
+  $('#bPreset').innerHTML = '<option value="">Load a preset...</option>'
+    + (B.presets||[]).map(n => '<option>'+esc(n)+'</option>').join('');
+  $('#bMaxStrong').textContent = B.max_strong;
+
+  // dials: own base first, the other base under More
+  const own = B.threads.filter(t => t.base === BSPEC.base);
+  const other = B.threads.filter(t => t.base !== BSPEC.base);
+  $('#bDials').innerHTML = own.map(dialRow).join('');
+  $('#bMore').innerHTML = other.map(dialRow).join('');
+  // A cross-over thread that is on must be visible, not folded away.
+  if (other.some(t => (BSPEC.dials[t.id] || 'off') !== 'off')) $('#bMoreWrap').open = true;
+  document.querySelectorAll('#bDials .seg button, #bMore .seg button').forEach(b =>
+    b.onclick = () => setDial(b.dataset.t, b.dataset.l));
+  renderRoles();
+}
+
+async function switchBase(base){
+  if (base === BSPEC.base) return;
+  // Re-suggest the dials and language for the new base from the posting; keep
+  // their bullet choices, the headline and nothing else from the old base.
+  const r = await post('/api/build/state', {id: B.id, fresh: true, base});
+  if (!r.ok){ flash('#bflash', r.err || 'could not switch base', false); return; }
+  const keep = {bullets: BSPEC.bullets, headline: BSPEC.headline};
+  B.suggestion = r.suggestion;
+  BSPEC = Object.assign(JSON.parse(JSON.stringify(r.spec)), keep);
+  flash('#bflash', 'Switched to ' + B.bases[base].label + '. Dials re-suggested for this base; your bullet choices are kept.', true);
+  renderBuild(); schedulePreview(0);
+}
+
+function renderRoles(shown){
+  shown = shown || new Set(B.roles.flatMap(r => r.bullets.filter(b => b.shown).map(b => b.id)));
+  const ovr = BSPEC.bullets || {};
+  $('#bRoles').innerHTML = B.roles.map(r => {
+    const n = r.bullets.filter(b => shown.has(b.id)).length;
+    const open = n > 0 ? ' open' : '';
+    return '<details class="brole"'+open+'><summary><b>'+esc(r.title)+'</b>, '+esc(r.org)
+      + ' <span class="muted small">'+esc(r.dates)+(r.project?' &middot; project':'')+(r.earlier?' (earlier build)':'')+'</span>'
+      + '<span class="cnt">'+n+' of '+r.bullets.length+'</span></summary>'
+      + r.bullets.map(b => {
+          const on = shown.has(b.id);
+          const forced = b.id in ovr;
+          const text = (BSPEC.lang === 'de' && b.text_de) ? b.text_de : b.text;
+          return '<div class="bline'+(on?'':' off')+'" data-b="'+b.id+'">'
+            + '<input type="checkbox" '+(on?'checked':'')+' data-b="'+b.id+'">'
+            + '<div class="txt"><span class="t">'+esc(text)+'</span>'
+            + (b.de_stale ? ' <span class="pill warn">German outdated</span>' : '')
+            + (BSPEC.lang === 'de' && !b.text_de ? ' <span class="pill warn">No German yet</span>' : '')
+            + '<div class="tags">'+esc((b.threads||[]).join(', '))
+            + (forced ? ' <span class="ovr">&#9679; your choice <a href="#" data-reset="'+b.id+'">reset</a></span>' : '')
+            + '</div></div>'
+            + '<button class="star'+(b.star?' on':'')+'" data-star="'+b.id+'" title="Conversation starter">&#9733;</button>'
+            + '<button class="edit" data-edit="'+b.id+'">Edit</button></div>';
+        }).join('')
+      + '</details>';
+  }).join('');
+  $('#bRoles').querySelectorAll('input[type=checkbox]').forEach(c => c.onchange = () => {
+    BSPEC.bullets = BSPEC.bullets || {};
+    BSPEC.bullets[c.dataset.b] = c.checked;
+    schedulePreview();
+  });
+  $('#bRoles').querySelectorAll('[data-reset]').forEach(a => a.onclick = ev => {
+    ev.preventDefault(); delete BSPEC.bullets[a.dataset.reset]; schedulePreview();
+  });
+  $('#bRoles').querySelectorAll('[data-star]').forEach(b => b.onclick = async () => {
+    const bullet = findBullet(b.dataset.star);
+    const r = await post('/api/build/star', {bullet: bullet.id, star: !bullet.star});
+    if (r.ok){ bullet.star = !bullet.star; schedulePreview(0); }
+  });
+  $('#bRoles').querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editBullet(b.dataset.edit));
+}
+
+function findBullet(id){
+  for (const r of B.roles) for (const b of r.bullets) if (b.id === id) return b;
+  return null;
+}
+
+function editBullet(id){
+  const b = findBullet(id);
+  const line = document.querySelector('.bline[data-b="'+id+'"] .txt');
+  const de = BSPEC.lang === 'de';
+  line.innerHTML = '<textarea style="min-height:70px;font-family:inherit;font-size:12.5px">'
+    + esc(de ? (b.text_de || b.text) : b.text) + '</textarea>'
+    + '<div style="margin-top:4px"><button class="go" style="padding:5px 10px">Save wording</button> '
+    + '<button class="alt" style="padding:5px 10px">Cancel</button>'
+    + '<span class="muted small" style="margin-left:6px">Saves to your career data'
+    + (de ? ' (German version)' : ', for every future CV') + '.</span></div>';
+  const [save, cancel] = line.querySelectorAll('button');
+  cancel.onclick = () => { line.innerHTML = '<span class="t">' + esc(de ? (b.text_de || b.text) : b.text) + '</span>'; schedulePreview(0); };
+  save.onclick = async () => {
+    const text = line.querySelector('textarea').value.trim();
+    const r = await post('/api/build/edit', de ? {bullet:id, text_de:text} : {bullet:id, text});
+    if (!r.ok){ flash('#bflash', r.err || 'could not save', false); return; }
+    if (de){ b.text_de = text; b.de_stale = false; } else { b.text = text; b.de_stale = r.de_stale; }
+    line.innerHTML = '<span class="t">' + esc(text) + '</span>';
+    flash('#bflash', 'Saved to your career data.' + (r.de_stale ? ' Its German version is now marked outdated.' : ''), true);
+    schedulePreview(0);
+  };
+}
+
+function schedulePreview(delay){
+  BSPEC.headline = $('#bHeadline').value;
+  BSPEC.photo = $('#bPhoto').checked;
+  clearTimeout(BTIMER);
+  BTIMER = setTimeout(runPreview, delay === undefined ? 350 : delay);
+}
+
+async function runPreview(){
+  const r = await post('/api/build/preview', {id: B.id, spec: BSPEC});
+  if (!r.ok){
+    $('#bProblems').textContent = (r.problems || [r.err]).join(' ');
+    return;
+  }
+  $('#bProblems').textContent = '';
+  const frame = $('#bFrame');
+  // A4 content width in the preview, so the page estimate matches print.
+  frame.srcdoc = r.html.replace('</style>',
+    '@media screen { body { max-width:210mm !important; padding:15mm !important; } }'
+    + ' body.six * { opacity:.13; } body.six h1, body.six .headline, body.six .summary,'
+    + ' body.six .six-keep, body.six .six-keep * { opacity:1 !important; }</style>');
+  frame.onload = () => {
+    const doc = frame.contentDocument;
+    markSixSecond(doc);
+    doc.body.classList.toggle('six', $('#bSix').checked);
+    // Lay the page out at true A4 width and scale it down to fit the pane.
+    // Measured at the pane's own width, the text wrapped more and a one-page
+    // CV estimated as four.
+    const html = doc.documentElement;
+    const a4 = 210 * 3.7795;
+    html.style.width = a4 + 'px';
+    const k = Math.min(1, (frame.clientWidth - 4) / a4);
+    html.style.transformOrigin = '0 0';
+    html.style.transform = 'scale(' + k + ')';
+    const mm = html.scrollHeight / 3.7795 - 30;
+    const pages = Math.max(1, Math.ceil(mm / 268));
+    const pill = $('#bPages');
+    const extends2 = r.may_extend && pages === 2;
+    pill.textContent = extends2 ? '~2 pages' : '~' + pages + ' of ' + r.max_pages + ' page' + (r.max_pages > 1 ? 's' : '');
+    pill.className = 'pill ' + (pages <= r.max_pages || extends2 ? 'ok' : 'warn');
+    pill.title = extends2 ? 'One page would leave too few bullets, so Finalize uses two. Set pages to 1 under Advanced to force one.'
+               : pages > r.max_pages ? 'Finalize trims the least valuable bullets to fit' : '';
+  };
+  $('#bBullets').textContent = r.bullet_count + ' bullets';
+  $('#bBullets').className = 'pill ' + (r.bullet_count >= 4 ? 'ok' : 'bad');
+  // An open Edit or translation proposal is not wiped by a preview refresh
+  // (typing in the headline, saving another proposal): the list re-renders
+  // once no editor is open.
+  B.lastShown = r.shown;
+  if (!document.querySelector('#bRoles textarea')){
+    renderRoles(new Set(r.shown));
+    addTranslateButtons();
+  }
+  renderUntranslated(r.untranslated || []);
+  renderReqs(r.requirements || []);
+  renderBrief(r.requirements || [], r.shown);
+}
+
+function markSixSecond(doc){
+  // What a recruiter reads first: name, headline, summary, and the title and
+  // first line of the first two entries in the first section.
+  const first = doc.querySelector('section');
+  if (!first) return;
+  first.querySelectorAll('.entry').forEach((e, i) => {
+    if (i > 1) return;
+    const t = e.querySelector('.entry-title'); if (t) t.classList.add('six-keep');
+    const li = e.querySelector('li'); if (li) li.classList.add('six-keep');
+  });
+  const h = first.querySelector('h2'); if (h) h.classList.add('six-keep');
+}
+
+function renderReqs(reqs){
+  if (!reqs.length){ $('#bReqs').innerHTML = '<p class="muted small">No requirement lines found in the posting.</p>'; return; }
+  const tone = {covered:'ok', available:'warn', gap:'bad', personal:''};
+  const word = {covered:'covered', available:'in your data', gap:'gap', personal:'personal'};
+  $('#bReqs').innerHTML = reqs.map((q, i) =>
+    '<div class="req"><span class="pill '+tone[q.status]+'">'+word[q.status]+'</span><div>'+esc(q.text)
+    + (q.note ? '<div class="muted small">'+esc(q.note)+'</div>' : '')
+    + (q.status === 'available' && (q.bullets||[]).length
+        ? ' <button class="alt" style="padding:2px 8px;font-size:11.5px" data-add="'+i+'">Add</button>' : '')
+    + '</div></div>').join('');
+  $('#bReqs').querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
+    BSPEC.bullets = BSPEC.bullets || {};
+    reqs[+b.dataset.add].bullets.forEach(id => BSPEC.bullets[id] = true);
+    schedulePreview(0);
+  });
+}
+
+$('#bHeadline').addEventListener('input', () => schedulePreview());
+$('#bPhoto').onchange = () => schedulePreview(0);
+$('#bPagesSel').onchange = () => {
+  BSPEC.advanced = BSPEC.advanced || {};
+  const v = $('#bPagesSel').value;
+  if (v) BSPEC.advanced.max_pages = +v; else delete BSPEC.advanced.max_pages;
+  schedulePreview(0);
+};
+$('#bSix').onchange = () => {
+  const doc = $('#bFrame').contentDocument;
+  if (doc && doc.body) doc.body.classList.toggle('six', $('#bSix').checked);
+};
+$('#bBack').onclick = () => { showTab('pipe'); if (B) showDetail(B.id); };
+$('#bResuggest').onclick = () => { if (B && confirm('Start over from the suggestion? Your changes to this application are dropped (star and wording edits stay).')) openBuild(B.id, true); };
+$('#bSave').onclick = async () => {
+  const r = await post('/api/build/save', {id: B.id, spec: BSPEC});
+  flash('#bflash', r.ok ? 'Saved for this application.' : (r.problems || [r.err]).join(' '), r.ok);
+};
+$('#bPresetSave').onclick = async () => {
+  const name = prompt('Name this preset (e.g. "Electronics retail"):');
+  if (!name) return;
+  const r = await post('/api/build/preset', {name, spec: BSPEC});
+  if (r.ok){ B.presets = r.presets; renderBuild(); flash('#bflash', 'Preset saved.', true); }
+};
+$('#bPreset').onchange = async () => {
+  const name = $('#bPreset').value; if (!name) return;
+  const r = await post('/api/build/preset/load', {name});
+  if (!r.ok) return;
+  Object.assign(BSPEC, {base: r.preset.base, lang: r.preset.lang, dials: r.preset.dials});
+  renderBuild(); schedulePreview(0);
+  flash('#bflash', 'Preset "' + name + '" applied. Your bullet choices are unchanged.', true);
+};
+$('#bFinalize').onclick = async () => {
+  const btn = $('#bFinalize'); btn.disabled = true; btn.textContent = 'Building PDF...';
+  const r = await post('/api/build/finalize', {id: B.id, spec: BSPEC});
+  btn.disabled = false; btn.textContent = 'Finalize CV';
+  $('#bResult').style.display = '';
+  const pill = $('#bResPill');
+  pill.textContent = r.ok ? 'passed all checks' : 'needs attention';
+  pill.className = 'pill ' + (r.ok ? 'ok' : 'bad');
+  $('#bResOut').textContent = (r.problems ? r.problems.join('\n') + '\n' : '')
+    + (r.pages ? r.pages + ' of ' + r.max_pages + ' page(s). ' : '')
+    + ((r.notes || []).join('; ')) + '\n\n' + (r.ats || r.err || '');
+  if (r.pdf){ $('#bOpenPdf').style.display=''; $('#bOpenPdf').onclick = () => post('/api/open', {path: r.pdf}); }
+  else $('#bOpenPdf').style.display = 'none';
+  flash('#bflash', r.ok ? 'CV finalized and saved.' + (r.desktop_copy ? ' Copied to the Desktop folder.' : '')
+                        : 'The CV was built but a check failed, so it was not copied to the Desktop or logged as sent. See below the preview.', r.ok);
+};
+
+// ---- Build panel, slice 2: summary, letter, translation, brief, deadline ----
+$('#bSummary').addEventListener('input', () => {
+  BSPEC.summary = $('#bSummary').value;
+  if (!$('#bSummary').value.trim()) { BSPEC.summary_accepted = false; $('#bSummaryOk').checked = false; }
+  schedulePreview();
+});
+$('#bSummaryOk').onchange = () => { BSPEC.summary_accepted = $('#bSummaryOk').checked; schedulePreview(0); };
+$('#bSummaryDraft').onclick = async () => {
+  const btn = $('#bSummaryDraft'); btn.disabled = true; btn.textContent = 'Drafting (about 30 s)...';
+  const r = await post('/api/build/summary', {id: B.id, spec: BSPEC});
+  btn.disabled = false; btn.textContent = 'Draft with AI';
+  if (!r.ok){ flash('#bflash', r.err || 'could not draft', false); return; }
+  $('#bSummary').value = r.text; BSPEC.summary = r.text;
+  BSPEC.summary_accepted = false; $('#bSummaryOk').checked = false;
+  const fails = (r.findings || []).filter(f => f.level === 'FAIL');
+  $('#bSummaryNote').textContent = fails.length
+    ? 'Check before accepting: ' + fails.map(f => f.rule).join('; ')
+    : ((r.findings || []).length ? 'Consider: ' + r.findings.map(f => f.rule).join('; ') : 'Checks clean. Read it, then Accept.');
+  $('#bSummaryNote').style.color = fails.length ? 'var(--accent)' : '';
+};
+
+function syncSummaryBox(){
+  $('#bSummary').value = BSPEC.summary || '';
+  $('#bSummaryOk').checked = !!BSPEC.summary_accepted;
+  $('#bSummaryNote').textContent = '';
+}
+
+async function letterCall(draft){
+  const out = $('#bLetterOut'); out.style.display = '';
+  out.textContent = draft ? 'Drafting the letter with AI. This takes 2 to 5 minutes...' : 'Writing the template...';
+  const r = await post('/api/build/letter', {id: B.id, spec: BSPEC, draft});
+  B.letter = r.letter; B.slug = r.slug || B.slug;
+  out.textContent = (r.scaffold_written ? '' : 'A drafted letter already exists, so the template was not rewritten.\n\n')
+    + ((r.out || '') + (r.err ? '\n' + r.err : '')).trim() || (r.ok ? 'Template written: ' + r.letter : 'Failed.');
+  flash('#bflash', r.ok ? (draft ? 'Letter drafted and checked. Read it, then Render letter.' : 'Letter template ready. Open letter.md to write it.')
+                        : (r.err || 'The draft needs attention: see the Letter card.'), r.ok);
+}
+$('#bLetterDraft').onclick = () => letterCall(true);
+$('#bLetterScaffold').onclick = () => letterCall(false);
+$('#bLetterOpen').onclick = () => {
+  if (!B.letter){ flash('#bflash', 'No letter yet. Draft it or make the template first.', false); return; }
+  post('/api/open', {path: B.letter});
+};
+$('#bLetterRender').onclick = async () => {
+  const r = await post('/api/letter', {slug: B.slug});
+  const out = $('#bLetterOut'); out.style.display = '';
+  out.textContent = r.todos ? 'Still to write:\n' + r.todos.join('\n')
+    : (r.voice && r.voice.some(f => f.level === 'FAIL'))
+      ? r.voice.map(f => f.level + '  line ' + f.line + '  ' + f.rule).join('\n')
+      : ((r.out || '') + (r.err || '')).trim();
+  if (r.pdf){ $('#bLetterPdf').style.display = ''; $('#bLetterPdf').onclick = () => post('/api/open', {path: r.pdf}); }
+  flash('#bflash', r.ok ? 'Letter rendered.' : (r.err || 'The letter needs attention.'), r.ok);
+};
+
+$('#bFit').onclick = async () => {
+  const btn = $('#bFit'); btn.disabled = true; btn.textContent = 'Analyzing (1 to 3 minutes)...';
+  const r = await post('/api/fit/analyze', {slug: B.slug});
+  btn.disabled = false; btn.textContent = 'Analyze fit (optional)';
+  const out = $('#bLetterOut'); out.style.display = '';
+  const a = r.analysis;
+  out.textContent = a ? ['Lead thread: ' + (a.thread || '?') + ' - ' + (a.why || '')]
+      .concat((a.honest_bridges || []).map(x => 'bridge: ' + (x.requirement || '') + ' <- ' + (x.bridge || '')),
+              (a.gaps || []).map(g => 'gap: ' + (g.requirement || g)))
+      .join('\n') : ((r.out || '') + (r.err || '')).trim();
+  flash('#bflash', r.ok ? 'Fit analysis saved. Draft letter with AI will use it.' : 'Fit analysis failed.', r.ok);
+};
+$('#bPackage').onclick = async () => {
+  const btn = $('#bPackage'); btn.disabled = true; btn.textContent = 'Packaging...';
+  const r = await post('/api/package', {slug: B.slug, merge: true});
+  btn.disabled = false; btn.textContent = 'Package for sending';
+  const out = $('#bSendOut'); out.style.display = '';
+  out.textContent = (r.problems || []).map(p => 'REFUSED  ' + p)
+    .concat((r.warnings || []).map(w => 'warning  ' + w), (r.files || []).map(f => 'ready    ' + f))
+    .join('\n') || r.err || '';
+  flash('#bflash', r.ok ? 'Packaged, and copied to the Desktop folder.' : 'Not packaged. See the reasons under Send.', r.ok);
+  if (r.dir){ $('#bOpenSubmit').style.display = ''; $('#bOpenSubmit').onclick = () => post('/api/open', {path: r.dir}); }
+};
+$('#bMarkSent').onclick = async () => {
+  if (!confirm('Mark this application as sent today?')) return;
+  const lead = B.threads.find(t => BSPEC.dials[t.id] === 'lead');
+  await post('/api/pipeline/update', {id: B.id, patch: {stage: 'sent', applied: true}});
+  await post('/api/pipeline/log', {id: B.id, text: 'Sent: ' + BSPEC.base + ' base, Lead '
+    + (lead ? lead.label : '?') + ', ' + (BSPEC.lang || 'en').toUpperCase() + ' CV'
+    + (B.letter ? ' and letter.' : '.')});
+  flash('#bflash', 'Marked as sent. Today will remind you to follow up in a week.', true);
+  loadPipe(); loadToday(); loadStatus();
+};
+
+function renderBrief(reqs, shownIds){
+  const lead = B.threads.find(t => BSPEC.dials[t.id] === 'lead');
+  const shown = new Set(shownIds || []);
+  const stars = B.roles.flatMap(r => r.bullets.filter(b => b.star && shown.has(b.id))
+                                               .map(b => ({b, r})));
+  const gaps = (reqs || []).filter(q => q.status === 'gap').slice(0, 2);
+  $('#bBrief').innerHTML =
+    '<p><b>This CV argues:</b> ' + esc(BSPEC.headline || B.role) + ', built on '
+    + esc(lead ? lead.label : 'the Lead thread') + '. '
+    + '<span class="muted">' + esc(lead ? lead.description : '') + '</span></p>'
+    + '<p style="margin-bottom:4px"><b>Stories to be asked about</b></p>'
+    + (stars.length ? '<ul>' + stars.slice(0, 3).map(x => '<li>' + esc(x.b.text) + ' <span class="muted small">(' + esc(x.r.org) + ')</span></li>').join('') + '</ul>'
+                    : '<p class="muted small">None starred yet. Star up to three bullets you would love to talk about.</p>')
+    + '<p style="margin-bottom:4px"><b>Likely to be probed</b></p>'
+    + (gaps.length ? '<ul>' + gaps.map(g => '<li>' + esc(g.text)
+          + '<div class="muted small">A gap on paper: have one honest sentence ready, then bridge to what you have done.' + (g.note ? ' ' + esc(g.note) : '') + '</div></li>').join('') + '</ul>'
+                   : '<p class="muted small">No clear gaps against the requirements this posting lists.</p>');
+}
+
+// A German CV leaves out bullets that have no German text (no English lines in
+// a Lebenslauf). Say so, and offer proposals for all of them in one request.
+function renderUntranslated(ids){
+  const box = $('#bUntranslated');
+  if (!ids.length || BSPEC.lang !== 'de'){ box.style.display = 'none'; return; }
+  if (box.dataset.busy) return;
+  box.style.display = '';
+  box.innerHTML = '<b>' + ids.length + ' bullet' + (ids.length > 1 ? 's are' : ' is')
+    + ' left out of this German CV</b> because ' + (ids.length > 1 ? 'they have' : 'it has')
+    + ' no German text yet (marked "No German yet" below). '
+    + '<button class="alt" style="padding:2px 8px;font-size:11.5px" id="bTrAll">Propose German for all</button>';
+  $('#bTrAll').onclick = async () => {
+    const btn = $('#bTrAll');
+    box.dataset.busy = '1';
+    btn.disabled = true;
+    btn.textContent = 'Translating ' + ids.length + ' bullets (about a minute)...';
+    const r = await post('/api/build/translate', {bullets: ids});
+    delete box.dataset.busy;
+    if (!r.ok){ btn.disabled = false; btn.textContent = 'Propose German for all';
+                flash('#bflash', r.err || 'could not translate', false); return; }
+    (r.items || []).forEach(it => {
+      const line = document.querySelector('.bline[data-b="' + it.id + '"]');
+      if (!line) return;
+      line.closest('details').open = true;
+      showProposal(line, findBullet(it.id), it.text, it.findings);
+    });
+    btn.textContent = 'Proposals ready below: read each, then Save German';
+  };
+}
+
+// An editable German proposal in place of a bullet's text. Saving goes through
+// the same checks as any wording edit.
+function showProposal(line, b, text, findings){
+  const txt = line.querySelector('.txt');
+  const warn = (findings || []).map(f => f.level + ': ' + f.rule).join('; ');
+  txt.innerHTML = '<div class="muted small">Proposed German. Edit if needed, then save.'
+    + (warn ? ' <span style="color:var(--accent)">' + esc(warn) + '</span>' : '') + '</div>'
+    + '<textarea style="min-height:70px;font-family:inherit;font-size:12.5px">' + esc(text) + '</textarea>'
+    + '<div style="margin-top:4px"><button class="go" style="padding:5px 10px">Save German</button> '
+    + '<button class="alt" style="padding:5px 10px">Cancel</button></div>';
+  const [save, cancel] = txt.querySelectorAll('button');
+  cancel.onclick = () => { txt.innerHTML = '<span class="t">' + esc(b.text) + '</span>'; schedulePreview(0); };
+  save.onclick = async () => {
+    const text_de = txt.querySelector('textarea').value.trim();
+    const s2 = await post('/api/build/edit', {bullet: b.id, text_de});
+    if (!s2.ok){ flash('#bflash', s2.err || 'could not save', false); return; }
+    b.text_de = text_de; b.de_stale = false;
+    txt.innerHTML = '<span class="t">' + esc(text_de) + '</span> <span class="pill ok">German saved</span>';
+    const tr = line.querySelector('[data-tr]'); if (tr) tr.remove();
+    flash('#bflash', 'German version saved.', true); schedulePreview(0);
+  };
+}
+
+// Translation proposal for a bullet whose German is outdated or missing.
+function addTranslateButtons(){
+  document.querySelectorAll('.bline').forEach(line => {
+    const b = findBullet(line.dataset.b);
+    if (!b || line.querySelector('[data-tr]')) return;
+    const missing = BSPEC.lang === 'de' && !b.text_de;
+    if (!(b.de_stale || missing)) return;
+    const btn = el('button', 'edit', 'Translate');
+    btn.dataset.tr = b.id;
+    btn.onclick = async () => {
+      btn.textContent = 'Translating...';
+      const r = await post('/api/build/translate', {bullet: b.id});
+      btn.textContent = 'Translate';
+      if (!r.ok){ flash('#bflash', r.err || 'could not translate', false); return; }
+      showProposal(line, b, r.text, r.findings);
+    };
+    line.appendChild(btn);
+  });
+}
+
+// Deadline mode: the suggestion as it stands, straight to a checked CV and a
+// drafted, rendered letter. Everything still goes through every check.
+async function deadlineMode(id){
+  await openBuild(id);
+  flash('#bflash', 'Deadline mode: finalizing the CV, then drafting and rendering the letter...', true);
+  $('#bFinalize').click();
+  while ($('#bFinalize').disabled) await new Promise(r => setTimeout(r, 800));
+  await letterCall(true);
+  await $('#bLetterRender').onclick();
+}
+</script>
+</body>
+</html>

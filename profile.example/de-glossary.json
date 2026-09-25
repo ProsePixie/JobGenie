@@ -1,0 +1,50 @@
+{
+  "_doc": "Rules for German output. The German CV is not produced by translating at render time: reviewed German text lives in career.json as text_de beside each English bullet, and render.py only looks it up. A translation generated fresh on every run is not reviewable, and hard rule 2 requires every claim to be traceable to something a human checked.",
+
+  "_why_this_file_exists": "German job titles carry legal weight that English ones do not. A careless translation does not merely read badly, it claims a credential. This is the list of what must never appear, and the wording approved instead.",
+
+  "never_use": [
+    {"term": "Ingenieur", "reason": "Protected by the Landesingenieurgesetze. Using it without the qualification is not a stylistic choice, it is a false claim. Applies to compounds too: Softwareingenieur, Trainingsingenieur.", "instead": "Entwickler, or leave the original English title"},
+    {"term": "Ausbilder", "reason": "Implies the AEVO certificate and a role in the formal dual training system. They is a corporate trainer, which is a different thing.", "instead": "Trainer, Dozent, Referent"},
+    {"term": "Meister", "reason": "A specific qualification with an examination behind it.", "instead": "Leiter, Verantwortlicher"},
+    {"term": "Diplom-, Dipl.-", "reason": "An academic degree prefix they does not hold.", "instead": "state the actual qualification"},
+    {"term": "Lehrer", "reason": "Implies state teaching qualification.", "instead": "Dozent for adult education, Trainer for corporate"},
+    {"term": "Berater (unqualified)", "reason": "Fine in compounds like Kundenberater. Avoid alone where it could read as Steuerberater or Rechtsberater, both regulated.", "instead": "Consultant, or name the domain"}
+  ],
+
+  "job_titles": {
+    "rule": "Titles held at international employers stay in the language they were held in. That is conventional on German CVs for such employers, and it removes the protected-title problem at source.",
+    "examples": ["Enablement Manager, Acme Software GmbH", "Technical Trainer, Globex GmbH"]
+  },
+
+  "section_headings": {
+    "Experience": "Berufserfahrung",
+    "Selected Work": "Ausgewählte Projekte",
+    "Skills": "Kenntnisse",
+    "Certifications": "Zertifizierungen",
+    "Education": "Ausbildung",
+    "Languages": "Sprachen",
+    "Earlier Experience": "Frühere Tätigkeiten"
+  },
+
+  "approved_terms": {
+    "enablement": "Enablement is used untranslated in German corporate settings and is clearer than Befähigung",
+    "training": "Schulung for a course, Training for the ongoing activity",
+    "onboarding": "Einarbeitung for staff, Onboarding for customers",
+    "instructional design": "Kursdesign or Konzeption von Lerninhalten",
+    "curriculum": "Curriculum or Lehrplan",
+    "customer success": "Customer Success, untranslated, as the industry uses it",
+    "self-paced": "selbstgesteuert",
+    "job aids": "Arbeitshilfen",
+    "talk track": "Gesprächsleitfaden"
+  },
+
+  "mechanical_rules": [
+    "Hyphenated compounds are wrapped in a nowrap span by render.py. A line break on the hyphen makes pdftotext drop it, so Enablement-Programm extracts as EnablementProgramm and a parser indexes a word that does not exist. ats_check verifies every compound in the source survived.",
+    "German runs roughly twenty percent longer than English, so the same content overflows. --since 2013 holds two bullets per role at two pages; without it the fit falls to one.",
+    "No em dashes, per profile/writing-style.md. German uses them even more freely than English, so this needs watching in translated text.",
+    "No photo and no date of birth, per their standing rule, even though German convention still expects both. This is a deliberate choice, not an oversight."
+  ],
+
+  "_review_status": "The 28 German bullets in career.json were drafted 2026-09-18 and have not been read by a native speaker. They is fluent spoken, so reading them aloud will catch anything that sounds wrong. Nothing here should go to an employer before that."
+}

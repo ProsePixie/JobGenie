@@ -1,0 +1,20 @@
+{
+  "_doc": "Portfolio registry: what can be shown, and what it proves. See .claude/skills/evidence.",
+  "artifacts": [
+    {
+      "id": "example-project",
+      "name": "Study Buddy",
+      "kind": "product",
+      "status": "Working, in personal use.",
+      "shareable": "public",
+      "one_liner": "Flashcard web app built with AI coding tools.",
+      "proves": [
+        "directing an AI build end to end"
+      ],
+      "demo_cost": "low",
+      "threads": [
+        "ai"
+      ]
+    }
+  ]
+}

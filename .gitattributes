@@ -1,0 +1,7 @@
+# Normalise line endings in the repository. Without this, every file
+# committed from Windows churns the whole diff on the next platform.
+* text=auto
+
+*.pdf binary
+*.png binary
+*.jpg binary

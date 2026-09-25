@@ -1,0 +1,20 @@
+{
+  "_doc": "Where you are and which languages you work in. Written by /setup. Read by the job-board watcher (location), the prescreen (relocation and language gates) and the CV builder (cv_languages).",
+  "home_places": [
+    "springfield",
+    "illinois"
+  ],
+  "home_countries": [
+    "united states",
+    "usa"
+  ],
+  "wide_regions": [
+    "north america",
+    "americas"
+  ],
+  "us_home": true,
+  "cv_languages": [
+    "en"
+  ],
+  "language_gates": []
+}

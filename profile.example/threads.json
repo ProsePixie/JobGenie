@@ -1,0 +1,210 @@
+{
+  "_doc": "EXAMPLE threads: your positioning tracks. /setup proposes your own from your history. Each thread belongs to a base (professional or service). Dials: lead, strong, light, off; exactly one lead, at most max_strong strong. targets are job titles; vocabulary is words a matching posting uses.",
+  "levels": [
+    "lead",
+    "strong",
+    "light",
+    "off"
+  ],
+  "max_strong": 2,
+  "bases": {
+    "professional": {
+      "label": "Professional",
+      "label_de": "Professionell",
+      "max_pages": 2,
+      "lang": "en",
+      "photo_allowed": false,
+      "tone": "positioning",
+      "sections": [
+        "summary",
+        "roles",
+        "projects",
+        "skills",
+        "certifications",
+        "education",
+        "languages"
+      ],
+      "max_projects": 4,
+      "max_certs": 4
+    },
+    "service": {
+      "label": "Service Industry",
+      "label_de": "Service & Handel",
+      "max_pages": 1,
+      "lang": "en",
+      "photo_allowed": true,
+      "tone": "plain",
+      "sections": [
+        "summary",
+        "roles",
+        "skills",
+        "languages",
+        "education",
+        "certifications"
+      ],
+      "max_projects": 0,
+      "max_certs": 2
+    }
+  },
+  "base_signals": {
+    "service": [
+      "cashier",
+      "retail",
+      "store associate",
+      "front desk",
+      "receptionist",
+      "barista",
+      "server",
+      "part-time",
+      "shift work",
+      "warehouse",
+      "help desk",
+      "it support technician"
+    ],
+    "professional": [
+      "enablement",
+      "onboarding program",
+      "stakeholder",
+      "saas",
+      "customer success",
+      "instructional design",
+      "curriculum",
+      "remote",
+      "b2b",
+      "enterprise",
+      "strategy",
+      "roadmap",
+      "llm",
+      "ai",
+      "go-to-market"
+    ]
+  },
+  "threads": [
+    {
+      "id": "enablement",
+      "base": "professional",
+      "label": "Enablement & Training",
+      "description": "Onboarding, training, sales and customer enablement.",
+      "headline": "Enablement & Training",
+      "targets": [
+        "Enablement Manager",
+        "Sales Enablement",
+        "Customer Education",
+        "Technical Trainer",
+        "Instructional Designer",
+        "L&D Manager",
+        "Customer Success Manager"
+      ],
+      "vocabulary": [
+        "enablement",
+        "onboarding",
+        "training",
+        "curriculum",
+        "certification",
+        "workshop",
+        "facilitation",
+        "learning",
+        "LMS",
+        "customer success",
+        "adoption"
+      ],
+      "avoid": [],
+      "people_focused": true
+    },
+    {
+      "id": "ai",
+      "base": "professional",
+      "label": "AI & Building",
+      "description": "Building with AI tools, AI adoption, automation.",
+      "headline": "AI Enablement",
+      "targets": [
+        "AI Enablement",
+        "AI Trainer",
+        "Prompt Engineer",
+        "AI Adoption Lead",
+        "Solutions Engineer"
+      ],
+      "vocabulary": [
+        "AI",
+        "LLM",
+        "generative AI",
+        "prompt",
+        "automation",
+        "Claude",
+        "ChatGPT",
+        "Python",
+        "workflow"
+      ],
+      "avoid": []
+    },
+    {
+      "id": "media",
+      "base": "professional",
+      "label": "Content & Media",
+      "description": "Writing, video, documentation.",
+      "headline": "Content & Documentation",
+      "targets": [
+        "Content Designer",
+        "Technical Writer",
+        "Content Manager",
+        "Video Producer"
+      ],
+      "vocabulary": [
+        "content",
+        "documentation",
+        "video",
+        "writing",
+        "storytelling",
+        "editing"
+      ],
+      "avoid": []
+    },
+    {
+      "id": "technical",
+      "base": "professional",
+      "label": "Technical",
+      "description": "Hands-on technical and platform work.",
+      "headline": "Technical Specialist",
+      "targets": [
+        "Solutions Consultant",
+        "Support Engineer",
+        "Implementation Specialist"
+      ],
+      "vocabulary": [
+        "cloud",
+        "SaaS",
+        "API",
+        "security",
+        "integration",
+        "troubleshooting",
+        "administration"
+      ],
+      "avoid": [],
+      "systems_ok": true
+    },
+    {
+      "id": "svc-general",
+      "base": "service",
+      "label": "Customer Service",
+      "description": "Customer-facing service work.",
+      "headline": "Customer Service",
+      "targets": [
+        "Customer Service Representative",
+        "Front Desk",
+        "Retail Associate",
+        "Help Desk Technician"
+      ],
+      "vocabulary": [
+        "customer service",
+        "customers",
+        "retail",
+        "cash",
+        "front desk",
+        "help desk",
+        "support",
+        "shifts"
+      ],
+      "avoid": []
+    }
+  ]
+}
