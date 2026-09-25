@@ -1,0 +1,14 @@
+# Your data never goes to a public repo
+profile/
+applications/
+data/
+documents/
+inbox/
+build/
+
+__pycache__/
+*.pyc
+.venv/
+render/.cache/
+.claude/settings.local.json
+.claude/worktrees/
