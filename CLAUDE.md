@@ -147,15 +147,17 @@ fit -> warm -> apply (dossier -> evidence -> draft -> review -> verify) -> prep 
 
 ## Build commands
 
+(On Windows, type `py` wherever this file says `python3`.)
+
 Rendering is zero-dependency: stdlib Python, headless Chrome, and `pdftotext`.
 There is no LaTeX in this project and none should be added.
 
 ```bash
-py render/render.py --base professional --lead enablement --threads "ai=strong,media=light" --headline "Customer Success Manager" --out applications/acme-csm
+python3 render/render.py --base professional --lead enablement --threads "ai=strong,media=light" --headline "Customer Success Manager" --out applications/acme-csm
 ```
 
 ```bash
-py tools/cv_suggest.py applications/acme-csm/posting.txt --title "Customer Success Manager"
+python3 tools/cv_suggest.py applications/acme-csm/posting.txt --title "Customer Success Manager"
 ```
 
 The renderer fits the document to `--max-pages` (default 2) by rendering, measuring
@@ -172,38 +174,38 @@ title and **Ausbilder** implies the AEVO certificate, so translating "engineer" 
 about twenty percent longer than English, so a German CV is trimmed more by the fitter.
 
 ```bash
-py render/letter.py applications/acme-prompt-engineer/letter.md
+python3 render/letter.py applications/acme-prompt-engineer/letter.md
 ```
 
 ```bash
-py render/ats_check.py applications/acme-prompt-engineer/cv.pdf --keywords "python,llm,rag"
+python3 render/ats_check.py applications/acme-prompt-engineer/cv.pdf --keywords "python,llm,rag"
 ```
 
 ```bash
-py tools/warm_path.py "Acme Systems"
+python3 tools/warm_path.py "Acme Systems"
 ```
 
 ```bash
-py tools/delivery_plan.py --minutes 14 --intro 30 --topic "Prompting for ops teams"
-py tools/delivery_plan.py --rehearse
+python3 tools/delivery_plan.py --minutes 14 --intro 30 --topic "Prompting for ops teams"
+python3 tools/delivery_plan.py --rehearse
 ```
 
 `delivery_plan.py` builds a timed run sheet for a live session (an interview presentation
 or training demo), with audience checkpoints written in.
 
 ```bash
-py tools/watch_ats.py --run
-py tools/watch_ats.py --discover "Company Name"
-py tools/watch_ats.py --add "Company Name" --ats ashby --slug companyname
+python3 tools/watch_ats.py --run
+python3 tools/watch_ats.py --discover "Company Name"
+python3 tools/watch_ats.py --add "Company Name" --ats ashby --slug companyname
 ```
 
 ```bash
-py web/server.py
+python3 web/server.py
 ```
 
 ```bash
-py -m unittest discover tests      # fast regression tests, no Chrome
-py tools/smoke_test.py             # every thread as Lead, both languages, through the builder
+python3 -m unittest discover tests      # fast regression tests, no Chrome
+python3 tools/smoke_test.py             # every thread as Lead, both languages, through the builder
 ```
 
 `watch_ats.py` polls company job boards at their ATS JSON endpoints, because careers
@@ -250,6 +252,6 @@ overcounts by exactly one.
   into a document, and never guess what it should say — ask.
 - Prefer evidence over adjectives. A link to a working artifact outranks any bullet.
 
-## Commands on macOS and Linux
+## Commands on Windows
 
-`py` is the Windows launcher. Elsewhere, use `python3` for every command in this file.
+Every command here uses `python3`. On Windows, use `py` (the Python launcher) instead.

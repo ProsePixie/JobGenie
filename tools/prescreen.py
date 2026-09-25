@@ -11,9 +11,9 @@ This runs the checks that do not need judgement, so the model only reasons
 about postings that survive them.
 
 Usage
-    py tools/prescreen.py posting.txt --title "AI Enablement Specialist"
-    py tools/prescreen.py posting.txt --title "..." --json
-    cat posting.txt | py tools/prescreen.py - --title "..."
+    python3 tools/prescreen.py posting.txt --title "AI Enablement Specialist"
+    python3 tools/prescreen.py posting.txt --title "..." --json
+    cat posting.txt | python3 tools/prescreen.py - --title "..."
 """
 
 import argparse

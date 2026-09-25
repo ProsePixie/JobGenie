@@ -27,7 +27,7 @@ Read `profile/watchlist.json` for targets and search terms. Do not re-read `CLAU
 4. **Screen the batch mechanically.** No model reads any posting at this stage.
 
 ```bash
-py tools/batch_screen.py applications/_scout/batch-2026-07-28.json
+python3 tools/batch_screen.py applications/_scout/batch-2026-07-28.json
 ```
 
 It deduplicates against `data/jobs-seen.jsonl` by company-plus-title, so re-running

@@ -17,10 +17,10 @@ changes the check and the two cannot drift apart.
 
 Standard library only.
 
-    py tools/voice_check.py applications/acme/letter.md
-    py tools/voice_check.py --career
-    py tools/voice_check.py applications/acme/cv.txt --json
-    py tools/voice_check.py -            reads stdin
+    python3 tools/voice_check.py applications/acme/letter.md
+    python3 tools/voice_check.py --career
+    python3 tools/voice_check.py applications/acme/cv.txt --json
+    python3 tools/voice_check.py -            reads stdin
 """
 
 import argparse

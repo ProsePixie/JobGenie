@@ -35,8 +35,8 @@ The honest_bridges text is checked afterward by tools/claim_check.py, the
 same verification draft_letter.py's output gets - inference is still a claim,
 and a claim still has to trace.
 
-    py tools/fit_and_select.py --slug acme-role --company Acme
-    py tools/fit_and_select.py --slug acme-role --company Acme --dry-run
+    python3 tools/fit_and_select.py --slug acme-role --company Acme
+    python3 tools/fit_and_select.py --slug acme-role --company Acme --dry-run
 """
 
 import argparse

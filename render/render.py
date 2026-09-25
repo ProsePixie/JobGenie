@@ -12,8 +12,8 @@ Standard library only. No LaTeX, no pip installs. Chrome or Edge does the
 PDF; pdftotext (ships with Git for Windows) does the text layer.
 
 Usage
-    py render/render.py --check
-    py render/render.py --base professional --lead ai --threads "enablement=strong" \
+    python3 render/render.py --check
+    python3 render/render.py --base professional --lead ai --threads "enablement=strong" \
         --out applications/acme-pe --posting applications/acme-pe/posting.txt
 
 Selection (bases, thread dials, bullets) lives in render/cv_builder.py; this

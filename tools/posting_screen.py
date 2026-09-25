@@ -18,7 +18,7 @@ Invisible characters are handled too. Unicode tag characters (U+E0000-E007F)
 render as nothing but spell out ASCII to a model, so they are decoded and
 flagged; zero-width and bidi control characters are removed.
 
-    py tools/posting_screen.py saved-posting.txt
+    python3 tools/posting_screen.py saved-posting.txt
 """
 
 import re

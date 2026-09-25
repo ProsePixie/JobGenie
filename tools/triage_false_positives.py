@@ -30,8 +30,8 @@ regardless of whether it changed anything - a report that was correctly
 judged to need no fix has still been reviewed. It does not commit anything;
 `git diff` and `git add` stay a deliberate, separate step.
 
-    py tools/triage_false_positives.py
-    py tools/triage_false_positives.py --dry-run
+    python3 tools/triage_false_positives.py
+    python3 tools/triage_false_positives.py --dry-run
 """
 
 import argparse

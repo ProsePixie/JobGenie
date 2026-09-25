@@ -16,10 +16,10 @@ Only `title` and `body` are required. Anything already seen in a previous run
 is skipped, so this is safe to re-run daily.
 
 Usage
-    py tools/batch_screen.py jobs.json
-    py tools/batch_screen.py jobs.json --all          # ignore the seen history
-    py tools/batch_screen.py jobs.json --min 35       # widen the shortlist
-    py tools/batch_screen.py jobs.json --json         # machine-readable
+    python3 tools/batch_screen.py jobs.json
+    python3 tools/batch_screen.py jobs.json --all          # ignore the seen history
+    python3 tools/batch_screen.py jobs.json --min 35       # widen the shortlist
+    python3 tools/batch_screen.py jobs.json --json         # machine-readable
 
 The score here is a PRE-FILTER, not a fit score. It decides what is worth
 opening. /fit decides what is worth applying to.

@@ -12,7 +12,7 @@ It exists because a manual check once passed while the real flow was broken,
 and because a German CV leaves out bullets with no text_de: an AI-led German
 CV once came out with a single bullet and nothing noticed.
 
-    py tools/smoke_test.py
+    python3 tools/smoke_test.py
 """
 
 import argparse

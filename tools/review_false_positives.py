@@ -11,9 +11,9 @@ said and deciding what to change, and that stays a deliberate step - see
 _test_before_adding in watchlist.json for exactly why nothing here should be
 auto-applied.
 
-    py tools/review_false_positives.py                 unreviewed reports
-    py tools/review_false_positives.py --all            everything ever reported
-    py tools/review_false_positives.py --mark-reviewed  clear the unreviewed flag
+    python3 tools/review_false_positives.py                 unreviewed reports
+    python3 tools/review_false_positives.py --all            everything ever reported
+    python3 tools/review_false_positives.py --mark-reviewed  clear the unreviewed flag
                                                          on everything currently shown
 """
 

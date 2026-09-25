@@ -8,11 +8,11 @@ polls.
 
 Standard library only.
 
-    py tools/watch_ats.py --discover "Hoxhunt"   find which ATS a company uses
-    py tools/watch_ats.py --add "Hoxhunt" --ats ashby --slug hoxhunt
-    py tools/watch_ats.py --run                  poll everything configured
-    py tools/watch_ats.py --run --all            ignore the seen history
-    py tools/watch_ats.py --run --json
+    python3 tools/watch_ats.py --discover "Hoxhunt"   find which ATS a company uses
+    python3 tools/watch_ats.py --add "Hoxhunt" --ats ashby --slug hoxhunt
+    python3 tools/watch_ats.py --run                  poll everything configured
+    python3 tools/watch_ats.py --run --all            ignore the seen history
+    python3 tools/watch_ats.py --run --json
 
 Config lives in profile/sources.json. New roles are matched against the target
 terms in profile/watchlist.json, so a security company's finance vacancies do
@@ -783,7 +783,7 @@ def main():
                 print("  %-16s slug=%-22s %d roles   %s"
                       % (f["ats"], f["slug"], f["roles"], "; ".join(f["sample"])[:70]))
             best = found[0]
-            print("\nTo keep it:\n  py tools/watch_ats.py --add %r --ats %s --slug %s"
+            print("\nTo keep it:\n  python3 tools/watch_ats.py --add %r --ats %s --slug %s"
                   % (args.discover, best["ats"], best["slug"]))
         else:
             print("  no public ATS endpoint found by slug guessing.")

@@ -17,9 +17,9 @@ It is the last gate before sending, so it refuses rather than warns:
       the finding names file, line and category, never the value)
     - an enclosure named on the command line does not exist
 
-    py tools/package.py <slug>
-    py tools/package.py <slug> --merge
-    py tools/package.py <slug> --enclose "Reference Acme.pdf" --merge
+    python3 tools/package.py <slug>
+    python3 tools/package.py <slug> --merge
+    python3 tools/package.py <slug> --enclose "Reference Acme.pdf" --merge
 """
 
 import argparse

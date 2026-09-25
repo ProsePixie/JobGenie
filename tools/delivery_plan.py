@@ -20,10 +20,10 @@ All five can be written down in advance. That is the whole idea.
 
 Standard library only.
 
-    py tools/delivery_plan.py --minutes 14 --intro 30
-    py tools/delivery_plan.py --minutes 90 --topic "Prompting for ops teams"
-    py tools/delivery_plan.py --minutes 45 --virtual
-    py tools/delivery_plan.py --rehearse
+    python3 tools/delivery_plan.py --minutes 14 --intro 30
+    python3 tools/delivery_plan.py --minutes 90 --topic "Prompting for ops teams"
+    python3 tools/delivery_plan.py --minutes 45 --virtual
+    python3 tools/delivery_plan.py --rehearse
 """
 
 import argparse
@@ -187,7 +187,7 @@ def main():
         print("costing more content than the responsiveness is worth. The opening")
         print("question and the callback carry it instead.")
         print()
-    print("Rehearse against: py tools/delivery_plan.py --rehearse")
+    print("Rehearse against: python3 tools/delivery_plan.py --rehearse")
     return 0
 
 

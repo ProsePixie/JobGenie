@@ -11,7 +11,7 @@ seconds. Run this **before** drafting, not after.
 ## Step 1 — Search locally
 
 ```bash
-py tools/warm_path.py "Company Name"
+python3 tools/warm_path.py "Company Name"
 ```
 
 The script filters the connections export on disk and prints only matching rows. Run it
@@ -68,7 +68,7 @@ Rules for the draft:
 Record it on the application's entry:
 
 ```bash
-py tools/pipeline.py record --company "<company>" --role "<role>" --set warm_path=true
+python3 tools/pipeline.py record --company "<company>" --role "<role>" --set warm_path=true
 ```
 
 The learning loop compares conversion with and without, and that comparison is usually

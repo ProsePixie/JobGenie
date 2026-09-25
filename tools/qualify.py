@@ -29,9 +29,9 @@ A score from a /fit review overrides this one (score_source "fit"), and so does
 a number typed in the pipeline card ("manual"). Recomputing never overwrites
 either.
 
-    py tools/qualify.py <slug-or-id>       one entry, with the breakdown
-    py tools/qualify.py --all              score every open entry that has a posting
-    py tools/qualify.py posting.txt --title "Customer Success Manager"
+    python3 tools/qualify.py <slug-or-id>       one entry, with the breakdown
+    python3 tools/qualify.py --all              score every open entry that has a posting
+    python3 tools/qualify.py posting.txt --title "Customer Success Manager"
 """
 
 import argparse

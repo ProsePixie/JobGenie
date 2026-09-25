@@ -13,9 +13,9 @@ in <app>/_previous/<date>/, never deleted. Applications that were sent,
 answered, or closed are never touched: the file there is the record of what
 the employer received.
 
-    py tools/rerender.py                 dry run: stage, check, compare
-    py tools/rerender.py --only acme     only slugs containing "acme"
-    py tools/rerender.py --apply         replace the old CVs that the new ones beat
+    python3 tools/rerender.py                 dry run: stage, check, compare
+    python3 tools/rerender.py --only acme     only slugs containing "acme"
+    python3 tools/rerender.py --apply         replace the old CVs that the new ones beat
 """
 
 import argparse

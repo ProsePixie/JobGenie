@@ -8,9 +8,9 @@ matches the visual layout, and which posting keywords are present.
 Standard library only. Requires pdftotext (ships with Git for Windows).
 
 Usage
-    py render/ats_check.py applications/acme/cv.pdf
-    py render/ats_check.py applications/acme/cv.pdf --keywords "python,llm,evaluation"
-    py render/ats_check.py applications/acme/cv.pdf --keywords-file posting.txt
+    python3 render/ats_check.py applications/acme/cv.pdf
+    python3 render/ats_check.py applications/acme/cv.pdf --keywords "python,llm,evaluation"
+    python3 render/ats_check.py applications/acme/cv.pdf --keywords-file posting.txt
 
 A keyword reported MISSING is triaged into one of two cases, because they call
 for opposite responses:

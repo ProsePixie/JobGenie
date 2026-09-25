@@ -60,7 +60,7 @@ Follow the `engine_rules` in the registry.
 3. Render:
 
 ```bash
-py render/render.py --base <professional|service> --lead <thread> --threads "<thread=level,...>" --headline "<job title>" --out applications/<slug>
+python3 render/render.py --base <professional|service> --lead <thread> --threads "<thread=level,...>" --headline "<job title>" --out applications/<slug>
 ```
 
 Or, normally, the user's **Build panel**, which writes the same spec to
@@ -115,7 +115,7 @@ Bullet-level edits go into `career.json`, then re-render. Do not patch the outpu
 ## Step 7 — Verify
 
 ```bash
-py render/ats_check.py applications/<slug>/cv.pdf --keywords-file applications/<slug>/posting.txt
+python3 render/ats_check.py applications/<slug>/cv.pdf --keywords-file applications/<slug>/posting.txt
 ```
 
 Every FAIL must be resolved before presenting the package.
@@ -141,7 +141,7 @@ for grounding, any gap left visible on purpose, and what the user must do by han
 Update the entry `/fit` created, rather than adding one:
 
 ```bash
-py tools/pipeline.py record --company "<company>" --role "<role>" --set stage=drafted \
+python3 tools/pipeline.py record --company "<company>" --role "<role>" --set stage=drafted \
     evidence_artifact=<id or null> "next_action=Review and submit"
 ```
 
