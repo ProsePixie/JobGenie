@@ -442,5 +442,12 @@ class AppLog(unittest.TestCase):
                 self.assertIn("boom", log.read_text())
 
 
+class ChromeDiscovery(unittest.TestCase):
+    def test_chrome_path_is_honoured(self):
+        # Documented in CLAUDE.md but never read, until 2026-09-25.
+        with mock.patch.dict("os.environ", {"CHROME_PATH": __file__}):
+            self.assertEqual(render.find_chrome(), __file__)
+
+
 if __name__ == "__main__":
     unittest.main()

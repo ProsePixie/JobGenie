@@ -23,3 +23,12 @@ jobs:
         run: cp -r profile.example profile
       - name: Regression tests
         run: python -m unittest discover tests -v
+      - name: PDF tools
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Render and check a CV end to end
+        env:
+          CHROME_NO_SANDBOX: "1"
+        run: |
+          export CHROME_PATH="$(command -v google-chrome || command -v chromium)"
+          python render/render.py --base professional --lead enablement --out /tmp/cv
+          python render/ats_check.py /tmp/cv/cv.pdf
