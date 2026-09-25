@@ -6,9 +6,9 @@ driver: it shells out to the existing scripts rather than reimplementing any of
 them, so there is exactly one copy of the rendering and screening logic and the
 UI cannot drift from the command line.
 
-    py web/server.py            start and open a browser
-    py web/server.py --no-open  start without opening a browser
-    py web/server.py --port N   use a different port
+    python3 web/server.py            start and open a browser
+    python3 web/server.py --no-open  start without opening a browser
+    python3 web/server.py --port N   use a different port
 
 Binds to 127.0.0.1 only. It runs subprocesses, so it must never be reachable
 from the network. Every operation is whitelisted; nothing accepts a free-form
@@ -129,7 +129,7 @@ ACTION_NAMES = {
     "/api/posting/capture": "Capture posting", "/api/captures/attach": "Attach capture",
     "/api/captures/dismiss": "Dismiss capture", "/api/settings/availability": "Save availability",
     "/api/settings/company": "Edit watchlist company", "/api/settings/term": "Edit search term",
-    "/api/settings/thresholds": "Save thresholds",
+    "/api/settings/thresholds": "Save thresholds", "/api/settings/send-folder": "Save send folder",
 }
 # Frequent and uneventful: logged only when they fail.
 CHECK_SCRIPTS = {"ats_check.py", "voice_check.py", "claim_check.py", "prescreen.py",
@@ -1364,6 +1364,7 @@ def api_settings():
             "companies": companies,
         },
         "thresholds": load_thresholds(),
+        "send_folder": str(send_folder() or ""),
     }
 
 
@@ -1405,8 +1406,24 @@ def api_settings_thresholds(body):
                 return {"ok": False, "err": "%s must be a number" % key}
     if cur["score_ok_min"] >= cur["score_good_min"]:
         return {"ok": False, "err": "the 'good' threshold must be higher than the 'ok' one"}
-    save_json_atomic(APP_SETTINGS, cur)
+    # Merge, not replace: the file holds other settings too (send_folder, weights).
+    save_json_atomic(APP_SETTINGS, {**load_json(APP_SETTINGS, {}), **cur})
     return {"ok": True, "thresholds": cur}
+
+
+def api_settings_send_folder(body):
+    """Set or clear the folder finished documents are also copied to."""
+    raw = (body.get("send_folder") or "").strip()
+    if raw and not Path(raw).is_absolute():
+        return {"ok": False, "err": "use a full path, e.g. C:\\Users\\you\\Desktop\\Job Applications "
+                                    "or /Users/you/Desktop/Job Applications"}
+    settings = load_json(APP_SETTINGS, {})
+    if raw:
+        settings["send_folder"] = raw
+    else:
+        settings.pop("send_folder", None)
+    save_json_atomic(APP_SETTINGS, settings)
+    return {"ok": True, "send_folder": raw}
 
 
 def api_settings_term(body):
@@ -1474,7 +1491,12 @@ def api_settings_company(body):
 # naming scheme at all.
 # --------------------------------------------------------------------------
 
-DESKTOP_APPS = Path.home() / "Desktop" / "Job Applications"
+def send_folder():
+    """Where finished CVs and packages are also copied, from Settings
+    (profile/app_settings.json "send_folder"). None: no copy is made. It was a
+    hard-coded Desktop/Job Applications folder, which not every user wants."""
+    raw = (load_json(APP_SETTINGS, {}).get("send_folder") or "").strip()
+    return Path(raw) if raw and Path(raw).is_absolute() else None
 
 
 def entry_for_slug(slug):
@@ -1490,7 +1512,10 @@ def entry_for_slug(slug):
 def desktop_prospect_folder(entry):
     name = "%s - %s" % (entry.get("company", "Unknown"), entry.get("role", "Role"))
     name = re.sub(r'[<>:"/\\|?*]', "-", name).strip()[:150] or "Application"
-    folder = DESKTOP_APPS / name
+    base = send_folder()
+    if base is None:
+        return None
+    folder = base / name
     folder.mkdir(parents=True, exist_ok=True)
     return folder
 
@@ -1519,6 +1544,8 @@ def sync_to_desktop(slug, file_path):
         if not entry:
             return None
         folder = desktop_prospect_folder(entry)
+        if folder is None:
+            return None
         dest = folder / Path(file_path).name
         ensure_exact_case(dest)
         shutil.copyfile(file_path, dest)
@@ -2746,6 +2773,7 @@ ROUTES_POST = {
     "/api/notes/add": api_notes_add,
     "/api/settings/availability": api_settings_availability,
     "/api/settings/thresholds": api_settings_thresholds,
+    "/api/settings/send-folder": api_settings_send_folder,
     "/api/settings/term": api_settings_term,
     "/api/settings/company": api_settings_company,
     "/api/career/certification": api_career_certification,

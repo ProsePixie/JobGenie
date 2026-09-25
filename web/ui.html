@@ -502,7 +502,7 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
         <h2>Send</h2>
         <p class="hint">Package for sending puts the CV and letter under clean names in a
           submit folder, with one merged PDF for portals that take a single upload, and copies
-          them to the Desktop folder. It refuses a CV that fails its checks, a stale or
+          them to your send folder (Settings), if you set one. It refuses a CV that fails its checks, a stale or
           overlong letter, or anything from the private tier.</p>
         <button class="go" id="bPackage">Package for sending</button>
         <button class="alt" id="bOpenSubmit" style="display:none">Open submit folder</button>
@@ -613,6 +613,17 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
     </div>
     <button class="go" id="setThreshSave">Save thresholds</button>
     <div id="setThreshFlash" class="flash"></div>
+  </div>
+
+  <div class="card">
+    <h2>Send folder</h2>
+    <p class="hint">Optional. Finished CVs and packaged documents are also copied here, one
+      subfolder per application, so what you upload is in one place. Leave it empty for no
+      copy. Use a full path.</p>
+    <div class="row"><div><label>Folder</label>
+      <input id="setSendFolder" placeholder="e.g. C:\Users\you\Desktop\Job Applications"></div></div>
+    <button class="go" id="setSendFolderSave">Save folder</button>
+    <div id="setSendFolderFlash" class="flash"></div>
   </div>
 
   <div class="card">
@@ -1548,6 +1559,7 @@ async function loadSettings(){
   $('#setShiftsYes').value = (a.shifts_yes || []).join('\n');
   $('#setShiftsNo').value = (a.shifts_no || []).join('\n');
 
+  $('#setSendFolder').value = SETTINGS.send_folder || '';
   const th = SETTINGS.thresholds;
   $('#setGood').value = th.score_good_min;
   $('#setOk').value = th.score_ok_min;
@@ -1602,6 +1614,11 @@ $('#setThreshSave').onclick = async () => {
     score_good_min: $('#setGood').value, score_ok_min: $('#setOk').value, stale_days: $('#setStale').value});
   flash('#setThreshFlash', r.ok ? 'Saved.' : (r.err||'could not save'), r.ok);
   if (r.ok){ loadToday(); loadPipe(); }
+};
+$('#setSendFolderSave').onclick = async () => {
+  const r = await post('/api/settings/send-folder', {send_folder: $('#setSendFolder').value});
+  flash('#setSendFolderFlash', r.ok ? (r.send_folder ? 'Saved.' : 'Cleared: no copies will be made.')
+                                    : (r.err || 'could not save'), r.ok);
 };
 $('#setTermBtnPrimary').onclick = () => {
   const v = $('#setTermAddPrimary').value.trim(); if (!v) return;
@@ -1981,8 +1998,8 @@ $('#bFinalize').onclick = async () => {
     + ((r.notes || []).join('; ')) + '\n\n' + (r.ats || r.err || '');
   if (r.pdf){ $('#bOpenPdf').style.display=''; $('#bOpenPdf').onclick = () => post('/api/open', {path: r.pdf}); }
   else $('#bOpenPdf').style.display = 'none';
-  flash('#bflash', r.ok ? 'CV finalized and saved.' + (r.desktop_copy ? ' Copied to the Desktop folder.' : '')
-                        : 'The CV was built but a check failed, so it was not copied to the Desktop or logged as sent. See below the preview.', r.ok);
+  flash('#bflash', r.ok ? 'CV finalized and saved.' + (r.desktop_copy ? ' Copied to your send folder.' : '')
+                        : 'The CV was built but a check failed, so it was not copied to your send folder or logged as sent. See below the preview.', r.ok);
 };
 
 // ---- Build panel, slice 2: summary, letter, translation, brief, deadline ----
@@ -2060,7 +2077,7 @@ $('#bPackage').onclick = async () => {
   out.textContent = (r.problems || []).map(p => 'REFUSED  ' + p)
     .concat((r.warnings || []).map(w => 'warning  ' + w), (r.files || []).map(f => 'ready    ' + f))
     .join('\n') || r.err || '';
-  flash('#bflash', r.ok ? 'Packaged, and copied to the Desktop folder.' : 'Not packaged. See the reasons under Send.', r.ok);
+  flash('#bflash', r.ok ? 'Packaged. Files are in the submit folder' + (SETTINGS && SETTINGS.send_folder ? ', and copied to your send folder.' : '.') : 'Not packaged. See the reasons under Send.', r.ok);
   if (r.dir){ $('#bOpenSubmit').style.display = ''; $('#bOpenSubmit').onclick = () => post('/api/open', {path: r.dir}); }
 };
 $('#bMarkSent').onclick = async () => {
