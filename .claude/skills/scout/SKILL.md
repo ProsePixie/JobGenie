@@ -45,7 +45,7 @@ daily only surfaces what is new. It reports three buckets:
 The pre-filter score is not a fit score. It decides what is worth opening; `/fit`
 decides what is worth applying to. A REVIEW row can still score 40 on the rubric.
 
-**Validated on three real postings:** it ranked Omaze at 60 (REVIEW, later scored 74 by
+**Validated on three real postings:** it ranked a strong enablement role at 60 (REVIEW, later scored 74 by
 `/fit` and recommended), and auto-skipped an annotation-piecework listing at 7 and a
 bot-configuration role at 0. Both of those had matched on title.
 
@@ -71,7 +71,7 @@ This exists because a posting titled "AI Enablement Specialist" scored a perfect
 match and turned out to be bot configuration, CRM integration and telephony plumbing.
 The word "enablement" means enabling *systems* in one industry and enabling *people* in
 this candidate's. The same trap sits under "Technical Trainer" when the role wants deep
-SME on a complex platform with a four-week ramp, which is precisely how the PingUs
+SME on a complex platform with a four-week ramp, which is precisely how a real
 engagement ended.
 
 So: **read the accountabilities before believing the title.** `prescreen.py` reports the

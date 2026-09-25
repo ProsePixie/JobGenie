@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Re-render every unsent application's CV with today's data and rules.
 
-A CV rendered before a rule changed stays exactly as it was: the VHS CVs
-missed a role the chronology check now requires, the Omaze CV ran to three
+A CV rendered before a rule changed stays exactly as it was: some CVs
+missed a role the chronology check now requires, another ran to three
 pages. This finds every application that has not gone out yet, builds its CV
 again with the CV builder - from its saved build.json, or the Build panel's own
 suggestion from the posting when there is none - runs the current checks on
@@ -14,7 +14,7 @@ answered, or closed are never touched: the file there is the record of what
 the employer received.
 
     py tools/rerender.py                 dry run: stage, check, compare
-    py tools/rerender.py --only vhs      only slugs containing "vhs"
+    py tools/rerender.py --only acme     only slugs containing "acme"
     py tools/rerender.py --apply         replace the old CVs that the new ones beat
 """
 

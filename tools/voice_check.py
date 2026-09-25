@@ -45,7 +45,7 @@ BRITISH = [
 ]
 
 # Not banned by the guide, but heavily overrepresented in generated prose.
-# Warnings, not failures, because a few of them are words he might really use.
+# Warnings, not failures, because a few of them are words they might really use.
 SMELLS = [
     "delve", "utilize", "utilise", "showcase", "underscore", "pivotal",
     "myriad", "holistic", "comprehensive", "multifaceted", "meticulous",

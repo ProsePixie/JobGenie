@@ -210,7 +210,7 @@ def bullet_text(bullet, lang, omissions=None):
     """The bullet in the requested language, falling back to English.
 
     A missing translation is reported rather than quietly machine-translated.
-    An untranslated line in a German CV is a visible gap he can fix; an invented
+    An untranslated line in a German CV is a visible gap they can fix; an invented
     German line is a claim nobody reviewed.
     """
     if lang == "de":
@@ -532,7 +532,7 @@ def paste_text(page_html):
     return "\n".join(out).strip() + "\n"
 
 
-# What "not generic" means, measured on real renders on 2026-09-24. The CV he
+# What "not generic" means, measured on real renders on 2026-09-24. The CV they
 # was sent for an electronics-retail job listed two lines of history, no
 # bullets and 969 characters on its page. ats_check.py fails a CV below these;
 # the renderer uses the same numbers when it decides whether a shorter
@@ -545,7 +545,7 @@ LAST_PAGE_MIN_SHARE = 0.25
 _SECTION_RE = re.compile(r"<h2>(.*?)</h2>(.*?)</section>", re.S)
 _ARGUED = {"experience", "berufserfahrung", "selected work", "ausgewählte projekte"}
 # Languages count as skills: for a retail or service job, native English plus
-# fluent spoken German is the most applicable skill he has.
+# fluent spoken German is the most applicable skill they have.
 _SKILLED = {"skills", "kenntnisse", "languages", "sprachen"}
 
 

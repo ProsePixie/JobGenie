@@ -99,11 +99,11 @@ def build_prompt(reports):
         "(near the top of the file) and the relevant() function that uses them.",
         "",
         "The following job matches were reported as having nothing to do with "
-        "his experience. For each one, decide whether it reveals a real, "
+        "their experience. For each one, decide whether it reveals a real, "
         "generalizable problem in the search terms or the negative filtering "
         "(a term matching the wrong industry, a company in the wrong domain "
         "entirely) versus being a one-off dislike with no generalizable cause "
-        "(pay, location, a company he just doesn't want). Only the first kind "
+        "(pay, location, a company they just doesn't want). Only the first kind "
         "gets a fix.",
         "",
     ]

@@ -135,7 +135,7 @@ AGE_PENALTY = {"professional": 0.4, "service": 0.15}
 
 # Posting relevance. The dials pick which threads argue; within a thread, the
 # bullets that speak to this posting's own words should win. Without it every
-# Customer Success posting got the same five Mimecast bullets, led by the two
+# Customer Success posting got the same five bullets from one employer, led by the two
 # animation series, whatever the posting asked for.
 WORD = re.compile(r"[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß+#-]{4,}")
 RELEVANCE_CAP = 8
@@ -200,7 +200,7 @@ def bullet_value(b, role, spec, prefer=(), terms=frozenset()):
 
     The dial dominates (10 per level), then strength, stars and relevance to
     the posting (2 per distinctive posting term, at most 8), then recency.
-    A small penalty for position keeps the order he wrote a job's bullets in
+    A small penalty for position keeps the order they wrote a job's bullets in
     when the scores are close: the first bullet is usually the summary line.
     """
     level = level_of(b.get("threads"), spec)
@@ -267,7 +267,7 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
         for b, forced in pool:
             level = level_of(b.get("threads"), spec)
             # `variant_of` marks a plain-language rewording of another bullet
-            # (the Service versions of the PingUs lines). The same fact never
+            # (a plain-language Service version of a line). The same fact never
             # appears twice: whichever version ranks higher takes it.
             fact = b.get("variant_of") or b["id"]
             if fact in facts and not forced:
@@ -285,9 +285,9 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
                     continue
                 light_used.update(light)
             chosen.append(b)
-        # Chosen by value, shown starred first and then in the order he wrote
+        # Chosen by value, shown starred first and then in the order they wrote
         # them: a job's first bullet usually says what the thing is, and value
-        # order opened the KCD2 entry with a detail instead.
+        # order opened a project entry with a detail instead.
         order = {id(x): i for i, x in enumerate(role.get("bullets", []))}
         chosen.sort(key=lambda x: (not x.get("star"), order.get(id(x), 99)))
         return chosen
@@ -305,7 +305,7 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
 
     project_cap = caps.get("projects", base_def.get("max_projects", 0))
     shown_projects = []
-    # A project he ticked by hand appears even where the base hides projects
+    # A project they ticked by hand appears even where the base hides projects
     # (Service): ticking a bullet and seeing nothing change was confusing.
     forced_projects = [r for r in projects
                        if any(overrides.get(b.get("id")) is True for b in r.get("bullets", []))]
@@ -326,7 +326,7 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
                 ranked.append((best, strength, role.get("start") or "", role, bullets))
         # Most relevant first, then the stronger proof, then the newer. Date
         # alone as the tie-break put a game companion app above the framework
-        # he taught live in an enablement casting, on an enablement CV.
+        # they taught live in an enablement casting, on an enablement CV.
         ranked.sort(key=lambda x: x[2], reverse=True)
         ranked.sort(key=lambda x: (-x[0], -x[1]))
         shown_projects = [{"role": r, "bullets": bl} for _, _, _, r, bl in ranked[:project_cap]]
@@ -451,7 +451,7 @@ def header_html(spec, ctx, omissions):
 def project_html(role, bullets, lang, omissions):
     """A project as one line saying what it is, then the proof.
 
-    Laid out like a job ("Creator, The Trosky Opening (personal project)",
+    Laid out like a job ("Creator, Study Buddy (personal project)",
     "Germany") a project spent two lines on a title that says nothing and a
     location that is not the point, and never said what the thing does. A
     project with a `pitch` (and `name`) in the CV's language gets
@@ -483,7 +483,7 @@ def entry_html(role, bullets, lang, omissions):
         meta_bits.append(R.e(loc))
     meta = " | ".join(b for b in meta_bits if b)
     # title_de / org_de carry only the parts that are annotation, not the
-    # title itself: "(contract)", "(acquired by Symantec)", a project's
+    # title itself: "(contract)", "(acquired by Globex)", a project's
     # description. Titles held in English stay English.
     de = lang == "de"
     title = '%s<span class="entry-org">, %s</span>' % (
@@ -628,8 +628,8 @@ def trim_order(spec, ctx, p):
 
 
 # A one-page CV that fits by cutting to fewer bullets than this is the "list of
-# job titles" CV: twelve years at Symantec and Mimecast as bare title lines.
-# When the page count is the base's default rather than his explicit choice,
+# job titles" CV: twelve years at two employers as bare title lines.
+# When the page count is the base's default rather than their explicit choice,
 # the builder goes to a second page instead and says so.
 THIN_BULLETS = 8
 
@@ -716,7 +716,7 @@ def _build(spec, out_dir, basename, prefer, fit, ctx, max_pages, recency=None):
         else:
             order = [x for x in trim_order(spec, ctx, p) if x[0] not in trimmed]
             # Never trim below the substance minimum on our own: a thin CV that
-            # fits is worse than a full one that tells him what to untick.
+            # fits is worse than a full one that tells them what to untick.
             room = shown_count(p) - R.MIN_BULLETS
             if not order or room <= 0:
                 notes.append("could not fit %d page(s) without dropping below %d bullets; "

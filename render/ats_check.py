@@ -188,7 +188,7 @@ def check_compounds(text, findings):
 
     Checked against the source rather than by pattern, because the obvious
     heuristic of a lowercase letter followed by a capital would flag every
-    FunkTrainer, OpenAI and PowerPoint in the document.
+    a product name, OpenAI and PowerPoint in the document.
     """
     try:
         career = json.loads(CAREER.read_text(encoding="utf-8"))
@@ -245,7 +245,7 @@ def check_keywords(text, keywords):
 def check_substance(text, pdf_path, findings):
     """Fail a CV that is thin, generic, or hides the work history.
 
-    His words, 2026-09-24: "Roles should at least be listed and applicable
+    Their words, 2026-09-24: "Roles should at least be listed and applicable
     skills shown." A CV built to undersell once collapsed every role into
     one sentence and shipped a page that was mostly blank. The text layer
     passed every other check here, because nothing here asked whether the
@@ -284,7 +284,7 @@ def check_substance(text, pdf_path, findings):
         german = bool(re.search(r'<html[^>]*lang="de"', html_text))
         hint = (". Most likely missing German translations: the builder leaves out "
                 "bullets with no text_de. Translate them (Build panel) or build in English"
-                if german else ". Tag more of his real bullets with the Lead thread in career.json")
+                if german else ". Tag more of their real bullets with the Lead thread in career.json")
         findings.append(("PASS" if ok else "FAIL", "substance",
                          "%d bullet(s) of actual work (minimum %d)%s"
                          % (found["bullets"], MIN_BULLETS, "" if ok else hint)))

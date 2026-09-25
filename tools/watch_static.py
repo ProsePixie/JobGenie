@@ -5,7 +5,7 @@ watch_ats.py polls ATS JSON endpoints - Ashby, Greenhouse, and so on. The
 local computer/electronics/repair shops in profile/local-businesses.json
 mostly have none of that: a one-to-twenty-person shop's "Jobs" section is
 usually a few lines of plain, server-rendered HTML on their own site (see
-COMMOTRON and oasoft, both verified this way). There is nothing to query -
+two small local employers were verified this way). There is nothing to query -
 only a page to re-read and compare against what it said last time.
 
 Standard library only. Fetches each business's careers_url, strips it down

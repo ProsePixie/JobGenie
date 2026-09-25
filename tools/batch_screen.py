@@ -2,7 +2,7 @@
 """Triage a batch of job postings mechanically, before any model reads them.
 
 The Indeed connector returns dozens of results per search. Reading all of them
-costs more than it is worth, and reading them by title is how the Jobgether
+costs more than it is worth, and reading them by title is how an aggregator
 posting nearly got through. This screens every posting against the hard gates,
 the people-to-systems orientation, the title trap, and the watchlist, then
 returns a short ranked list worth actually reasoning about.
@@ -39,7 +39,7 @@ SEEN = ROOT / "data" / "jobs-seen.jsonl"
 WATCHLIST = ROOT / "profile" / "watchlist.json"
 
 # Gates that cannot be cleared by any amount of good fit.
-FATAL_GATES = {"german_required": 30, "relocation": 30, "clearance_or_citizenship": 30,
+FATAL_GATES = {"language_required": 30, "relocation": 30, "clearance_or_citizenship": 30,
                "commodity_role": 35}
 SOFT_GATES = {"contract_not_employment": 8, "undisclosed_employer": 10, "ai_screened": 2}
 
@@ -103,10 +103,14 @@ def triage(job, result, watch):
         # IT-support and administrator work is a deliberate target (the Service
         # base's Technical thread), so a posting it leads is not penalized for
         # being systems work, by the builder's view or by its title alone.
+        # A thread marked "systems_ok" in threads.json (IT support, administration)
+        # is a deliberate systems target, so a posting it leads is not penalized.
         by_title = result.get("thread_by_title") or {}
-        if (result.get("base") == "service" and result.get("lead_thread") == "svc-technical") or \
-                (by_title.get("id") == "svc-technical" and by_title.get("overlap", 0) >= 0.5):
-            why.append("systems-oriented, but a Service technical target")
+        ok = {t["id"] for t in json.loads((ROOT / "profile" / "threads.json").read_text(
+            encoding="utf-8")).get("threads", []) if t.get("systems_ok")}
+        if result.get("lead_thread") in ok or \
+                (by_title.get("id") in ok and by_title.get("overlap", 0) >= 0.5):
+            why.append("systems-oriented, but a systems target you chose")
         else:
             score -= 25
             why.append("-25 systems-oriented")

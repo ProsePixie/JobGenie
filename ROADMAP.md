@@ -1,49 +1,44 @@
 # Roadmap
 
-Scaffolded 2026-09-25 from a private, working job-search system. The engine is copied
-whole and runs on the fictional `profile.example/`: `render --check`, a full CV build, the
-ATS check and all regression tests pass. What remains, in order:
+Scaffolded 2026-09-25 from a private, working job-search system, then generalised so it
+works for anyone, anywhere. Verified on the fictional `profile.example/` (a US user):
+add a job, automatic score, Build panel, preview, finalize with ATS check, letter
+scaffold, package, document viewer, log. All regression tests pass, including the
+location classifier for both a US and a German user.
 
-## 1. Remove the original user from the code (small)
+## Done
 
-The name and home town were replaced. Remaining references to the original user's
-employers and history, mostly in comments and examples, by file (count):
+- The original user's data, history and name are gone; code comments, skills and
+  examples are neutral (they/them, Acme/Globex examples).
+- `profile/market.json`: home places and countries, regions that include home, CV
+  languages, language gates. Read by the job-board watcher, the prescreen and the CV
+  builder, so location filtering and gates work anywhere.
+- German market features are optional: German CVs only when `"de"` is in
+  `cv_languages`; the Bundesagentur board only when added as a source.
+- Thread behaviour is data, not ids: `people_focused` (scores orientation) and
+  `systems_ok` (no penalty for systems work) in `threads.json`.
+- A generic example `threads.json` (English bases, five example threads).
 
-- `render/cv_builder.py` (5), `tools/careerdata.py` (5), `tools/claim_check.py` (5)
-- `.claude/skills/fit` (4), `warm` (3), `scout` (1)
-- `tools/cv_suggest.py`, `fit_and_select.py`, `package.py`, `prescreen.py`, `watch_ats.py` (1 each)
-- `profile.example/de-glossary.json` (2), `evaluation.md` (1), `threads.json` (1)
+## Next
 
-Find them with:
-`grep -rniE "mimecast|symantec|keepit|pingus|blaueszimmer|prosepixie|fuerstenfeldbruck" --exclude-dir=.git .`
+1. **`/setup`** (the main new feature). `.claude/skills/setup/SKILL.md` is the
+   specification. Test it end to end with a real CV, PDF and DOCX.
+2. **LinkedIn importer**: `tools/import_linkedin.py`, proposing roles, education, skills
+   and certifications from the export's CSVs for `/setup` to confirm.
+3. **Other CV languages.** Only English and German have section labels and date words
+   (`render/render.py` `LABELS`, `MONTHS_DE`). Adding French or Spanish means one entry in
+   each, plus `text_<lang>` bullets.
+4. **More job sources.** Greenhouse, Lever, Ashby, SmartRecruiters, Workable and the
+   Bundesagentur are supported; national boards elsewhere are not.
+5. **`py` vs `python3`**: CLAUDE.md still shows Windows `py`; the server already uses
+   the running interpreter.
+6. **Desktop copy**: `web/server.py` `sync_to_desktop` copies finished CVs to
+   `Desktop/Job Applications`; make the folder a setting.
 
-Also review `profile.example/evaluation.md` and `writing-style.md` for the original user's
-situation, and `tests/test_regressions.py` for cases that assume their data.
-
-## 2. Configuration instead of constants (medium)
-
-- `tools/prescreen.py` `HOME` and the relocation gate, `tools/watch_ats.py` location
-  classes (DACH-first) -> read from `profile/availability.json`.
-- German-market features (German CV, DIN 5008 letter, glossary, gender-tag detection)
-  -> an optional "German market pack", off by default.
-- Threads in `profile.example/threads.json` are the original user's seven; replace with a
-  small, clearly-example set, and make `/setup` generate the real ones.
-- `py` vs `python3` in docs and in `web/server.py`'s `PY`.
-
-## 3. `/setup` (large, the main new feature)
-
-`.claude/skills/setup/SKILL.md` is the specification. Build and test it end to end with a
-real CV, including DOCX extraction and `tools/import_linkedin.py`.
-
-## 4. Portfolio presentation
+## Portfolio presentation
 
 - Screenshots of Jane Doe's pipeline, Build panel, score breakdown and log.
-- An architecture page and a security-model write-up (posting screen, `claude_run.SAFE_ARGS`,
-  private tier, leak check).
+- An architecture page and a security-model write-up (posting screen,
+  `claude_run.SAFE_ARGS`, private tier, leak check).
 - LICENSE (MIT suggested; the credited upstream is MIT). Owner's decision.
 - How much of the original story the README tells. Owner's decision.
-
-## Not copied, on purpose
-
-The original user's `profile/`, `applications/`, `data/`, `documents/`, `STATUS.md`,
-`plans/` and git history.

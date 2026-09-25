@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""How qualified the career data says he is for one posting: a 0-100 score
+"""How qualified the career data says they are for one posting: a 0-100 score
 with every point explained.
 
 The pipeline's `score` was a number typed in by hand, or by a /fit session,
@@ -48,7 +48,6 @@ sys.path.insert(0, str(ROOT / "web"))
 
 WEIGHTS = {"requirements": 60, "lead": 15, "orientation": 10, "evidence": 15}
 CREDIT = {"covered": 1.0, "available": 0.6, "gap": 0.0}
-PEOPLE_LEADS = {"enablement", "svc-teaching"}
 OVERRIDES = {"fit", "manual"}
 NICE = re.compile(r"(is a plus|nice.to.have|a bonus|bonus points|preferred|ideally|"
                   r"w\u00fcnschenswert|von vorteil|idealerweise|ein plus)", re.I)
@@ -113,7 +112,8 @@ def qualify(posting, title="", ctx=None, weights=None):
     parts.append({"key": "lead", "label": "Lead clarity", "value": round(value), "why": why})
 
     pre = prescreen.screen(posting, title)
-    if lead in PEOPLE_LEADS:
+    # Only where the Lead is about people (threads.json "people_focused").
+    if (ctx["by_id"].get(lead) or {}).get("people_focused"):
         o = _orientation_value(pre["orientation"])
         if o is not None:
             parts.append({"key": "orientation", "label": "People or systems", "value": o,

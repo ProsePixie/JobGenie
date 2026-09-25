@@ -84,7 +84,7 @@ Environment and Lead clarity keep their exact Stage 3 definitions and weights (2
 | Dimension | Weight | 80–100 | 55–79 | 30–54 | 0–29 |
 |---|---|---|---|---|---|
 | **Immediacy** | 15% | Hiring now, reachable within the stated commute/hours, no long process | Likely soon, minor friction | Unclear timeline or a real scheduling conflict | Not actually available now |
-| **Honest reachability** | 15% | Every requirement has an honest match or a stated, closeable gap (see `gap_honesty` in `archive/personas.json`) | One requirement is a real, open gap | Several open gaps, or one that cannot honestly be bridged | Requires a credential or experience he does not have and cannot honestly claim (e.g. §34a Sachkunde for security work) |
+| **Honest reachability** | 15% | Every requirement has an honest match or a stated, closeable gap (see `gap_honesty` in `archive/personas.json`) | One requirement is a real, open gap | Several open gaps, or one that cannot honestly be bridged | Requires a credential or experience they do not have and cannot honestly claim (e.g. §34a Sachkunde for security work) |
 
 Score = (Affinity × 0.20) + (Capability × 0.20) + (Environment × 0.20) + (Immediacy × 0.15)
 + (Honest reachability × 0.15) + (Lead × 0.10)
@@ -114,8 +114,8 @@ That is a conditional, not a preference, and it produces three tests:
    technology itself the deliverable?
 
 Weight it at 20% because it has better predictive power than capability. Both roles that
-ended badly were affinity failures, not capability failures. PingUs was technology as the
-deliverable — obscure XDR settings, no problem they held. The Jobgether posting was
+ended badly were affinity failures, not capability failures. One was technology as the
+deliverable — obscure product settings, no problem they held. The other was
 integration plumbing. Neither would have been survivable at any skill level, and both
 would have scored respectably on capability alone.
 

@@ -103,9 +103,7 @@ An application that argues everything at once reads as unfocused and loses to a
 candidate who picked one angle. If no thread clearly leads for a posting, that is a
 signal the fit is weak: surface it rather than turning everything up.
 
-(Changed 2026-09-24 by the user from "one persona per application". The old personas
-are archived in `profile/archive/personas.json` for their prose - spine, `gap_honesty`,
-`comp_note` - and are not read by any code.)
+
 
 ---
 
@@ -115,8 +113,9 @@ are archived in `profile/archive/personas.json` for their prose - spine, `gap_ho
 profile/career.json      Roles, projects, education, certifications, skills. Source of truth.
                          Every bullet has an `id`, `threads` and `tags`; `star` marks a
                          conversation starter.
-profile/threads.json     The two bases and seven threads (targets, vocabulary, headline).
-profile/archive/         The retired personas.json, kept for its notes. Not read by code.
+profile/threads.json     The two bases and your threads (targets, vocabulary, headline;
+                         people_focused, systems_ok flags).
+profile/market.json      Where you are, which languages you write CVs in, language gates.
 profile/evidence.json    Portfolio registry. What can be shown, and what it proves.
 profile/writing-style.md Voice rules and the banned list.
 profile/evaluation.md    Fit rubric, gates, thresholds.
@@ -215,11 +214,18 @@ about a company it has never heard of; one that reports two postings called "tes
 ATS tenant nobody ever used. Both are discarded rather than added.
 
 Hits are filtered by target term, by a negative list (a full-stack engineer matching
-"training", a physics postdoc matching "Deep Learning") and by location class. The
-location classifier tests the reject list before the allow list, because "Remote - US"
-and "Remote: India" both contain "remote" and the other order passed every one of them.
-Non-DACH Europe is rejected too: an on-site role in Sofia is no more available than one
-in Pune. `--anywhere` overrides all of it.
+"training", a physics postdoc matching "Deep Learning") and by location against
+`profile/market.json`: `home_places`, `home_countries`, `wide_regions` (regions that
+include home) and `us_home`. The classifier tests the reject list before the allow list,
+because "Remote - US" and "Remote: India" both contain "remote". A US state code
+("Berlin, NH") outranks a home town's name unless a home country is named. Everything in
+the world list that is not home is rejected. `--anywhere` overrides all of it.
+
+`market.json` also sets `cv_languages` (a CV is never built in a language not listed)
+and `language_gates` (a language the user holds only partly, e.g. spoken but not written,
+which the prescreen flags as "check first"). German CVs, DIN 5008 letters, the German
+glossary and the Bundesagentur job board are the optional German market pack: they
+activate only when `"de"` is in `cv_languages` or that source is added.
 
 `web/server.py` is a local UI over everything above. Standard library only, bound to
 127.0.0.1, and a thin driver: it shells out to these same scripts rather than

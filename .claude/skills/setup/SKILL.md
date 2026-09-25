@@ -22,7 +22,9 @@ Status: **scaffold** - the flow below is the specification; see ROADMAP.md item 
 1. If `profile/` does not exist: `cp -r profile.example profile`, then clear the example
    roles, education, certifications and skills (tell the user first).
 2. Ask for the CV in `inbox/` (PDF: `pdftotext -layout`; DOCX: unzip `word/document.xml`).
-   If a LinkedIn export is present, `tools/import_linkedin.py` proposes fills.
+   If a LinkedIn export is present, read its `Positions.csv`, `Education.csv`,
+   `Skills.csv` and `Certifications.csv` for proposals (a dedicated importer is on the
+   ROADMAP). Never read `Connections.csv` into context; `tools/warm_path.py` searches it locally.
 3. Identity: name, email, phone, city, links. Confirm each.
 4. For each role, newest first: title, organisation, dates (YYYY-MM), location. Then each
    achievement as a bullet: confirm the wording, ask for numbers only if the user has them,
@@ -30,8 +32,11 @@ Status: **scaffold** - the flow below is the specification; see ROADMAP.md item 
 5. Threads: propose 3-5 from the confirmed history (id, label, headline, targets,
    vocabulary) and write them to `profile/threads.json` after the user edits them.
 6. Education, certifications, skills clusters, languages (with honest levels).
-7. Availability: location, commute radius, remote preference, pay floor, work
-   authorisation -> `profile/availability.json`.
+7. Market -> `profile/market.json` (shape in `profile.example/market.json`):
+   `home_places` (town, region), `home_countries`, `wide_regions` that include home,
+   `us_home`, `cv_languages` (e.g. ["en"], or ["en","de"] for the German market pack),
+   `language_gates` for a language held only partly. Then availability (commute radius,
+   remote preference, pay floor, work authorisation) -> `profile/availability.json`.
 8. Create `profile/private/leak-terms.txt` with the user (they type the terms; you do not
    read the file afterwards).
 9. Run `python3 render/render.py --check` and one build per thread; report any thread with

@@ -60,11 +60,29 @@ OPS_SIGNALS += [
     "systemadministration", "firewall", "firewalls", "verkabelung",
 ]
 
-# Places the candidate already is. A "must be based in" naming one of these is
-# a description of him, not a gate. Mirrors the constraint in career.json:
-# Munich area, fixed; otherwise remote from Germany.
-HOME = (r"germany|deutschland|europe|emea|the\s+eu|dach|munich|m(ü|ue|u)nchen|"
-        r"bavaria|bayern")
+# Places the candidate already is, from profile/market.json home_places and
+# wide_regions. A "must be based in" naming one of these describes them, not a gate.
+def _market():
+    try:
+        return json.loads((ROOT / "profile" / "market.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+MARKET = _market()
+HOME = "|".join(re.escape(str(x).lower()) for x in
+                (MARKET.get("home_places") or []) + (MARKET.get("wide_regions") or [])) or "(?!x)x"
+
+
+def language_gate(names):
+    """A requirement for one language at a level the user does not have in writing."""
+    n = "|".join(re.escape(x.lower()) for x in names)
+    level = (r"fluent|native|professional|business|verhandlungssicher|flie(?:ß|ss)end|"
+             r"muttersprachlich|courant|fluido|nativo|c1|c2")
+    return re.compile(
+        r"(%s)[-\s]+(level\s+)?(proficiency\s+)?(in\s+)?(written\s+)?(\w+\s+(and|&|und)\s+)?(%s)\b|"
+        r"\b(%s)\w*[^.\n]{0,40}?\b(%s|must|required|essential|mandatory)\b" % (level, n, n, level), re.I)
+
 
 # A requirement that is immediately softened is not a requirement. Checked on
 # the text around a match, within the same sentence.
@@ -72,21 +90,15 @@ SOFTENED = re.compile(
     r"\b(a\s+)?(plus|bonus|advantage|nice[-\s]to[-\s]have|beneficial|preferred|"
     r"desirable|optional)\b|von\s+vorteil|w(ü|ue)nschenswert|ein\s+plus", re.I)
 
-GATES = [
-    # "fließend" alone matched "fließend Englisch", and "fluent German" missed
-    # "fluent English and German", the most common way the requirement is put.
-    ("german_required", re.compile(
-        r"(flie(ß|ss)end|verhandlungssicher|muttersprachlich)\w*\s+(in\s+)?deutsch|"
-        r"deutsch\w*[^.\n]{0,40}?(flie(ß|ss)end|verhandlungssicher|muttersprach|\bc1\b|\bc2\b)|"
-        r"german\s*(language)?\s*(skills?|proficiency)?\s*(is|are)?\s*(a\s*)?"
-        r"(must|required|essential|mandatory)|"
-        r"(fluent|native|professional|business)[-\s]+(level\s+)?(proficiency\s+)?(in\s+)?"
-        r"(written\s+)?(english\s+(and|&)\s+)?german|"
-        r"german\s*[(:-]?\s*(c1|c2|native|fluent)", re.I),
-     "Requires German. Spoken delivery is fine; written German unaided is a FAIL.",
-     True),
+# A language the user lists in market.json language_gates, e.g.
+# {"language": "German", "names": ["german", "deutsch"], "note": "Spoken is fine; written is not"}.
+LANGUAGE_GATES = [("language_required", language_gate(g.get("names") or [g["language"]]),
+                   "Requires %s. %s" % (g["language"], g.get("note", "")), True)
+                  for g in MARKET.get("language_gates") or [] if g.get("language")]
+
+GATES = LANGUAGE_GATES + [
     # A bare "relocat" matched "relocation package offered", which is a benefit,
-    # and "must be based in Munich" was treated as a gate for someone in Munich.
+    # and "must be based in <home town>" was treated as a gate for someone living there.
     ("relocation", re.compile(
         r"(must|willing\s+to|required\s+to|need\s+to|expected\s+to)\s+relocate|"
         r"relocation\s+(is\s+)?(required|mandatory|necessary)|"
@@ -98,12 +110,11 @@ GATES = [
         r"consulting\s+(opportunity|engagement)|freelance|contractor|b2b\s+contract|"
         r"self-?employed|independent\s+contractor|fixed-?term|"
         # German, which this gate never read: fixed-term, freelance, fee basis.
-        # The VHS teaching roles are all Honorarkraft work and slipped through.
+        # Adult-education fee-basis roles (Honorarkraft) slipped through.
         r"\bbefristet|freiberuflich|freie[rn]?\s+mitarbeit|honorar(basis|kraft|vertrag)|"
         r"auf\s+honorarbasis|werkvertrag", re.I),
-     "Contract or consulting, not employment. Different income and benefits profile. "
-     "While on ALG I, self-employed work of 15+ hours a week can end the claim: check "
-     "with the Agentur first.",
+     "Contract or consulting, not employment. Different income, tax and benefits "
+     "profile; if you receive unemployment benefits, check how self-employed hours affect them.",
      False),
     ("undisclosed_employer", re.compile(
         r"on\s+behalf\s+of\s+(a|our)\s+(partner|client)|our\s+partner\s+is\s+looking|"
@@ -478,8 +489,8 @@ def main():
         print()
         print("  *** TITLE TRAP ***")
         print("  The title reads as a learning or enablement role, but the body is")
-        print("  systems work. This is the shape that produced the PingUs mismatch")
-        print("  and the Jobgether skip. Read the accountabilities before believing")
+        print("  systems work. This is the shape of a deep product-specialist role")
+        print("  in disguise. Read the accountabilities before believing")
         print("  the title.")
 
     if gaps:

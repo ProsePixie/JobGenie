@@ -5,16 +5,16 @@
 
   "never_use": [
     {"term": "Ingenieur", "reason": "Protected by the Landesingenieurgesetze. Using it without the qualification is not a stylistic choice, it is a false claim. Applies to compounds too: Softwareingenieur, Trainingsingenieur.", "instead": "Entwickler, or leave the original English title"},
-    {"term": "Ausbilder", "reason": "Implies the AEVO certificate and a role in the formal dual training system. He is a corporate trainer, which is a different thing.", "instead": "Trainer, Dozent, Referent"},
+    {"term": "Ausbilder", "reason": "Implies the AEVO certificate and a role in the formal dual training system. They is a corporate trainer, which is a different thing.", "instead": "Trainer, Dozent, Referent"},
     {"term": "Meister", "reason": "A specific qualification with an examination behind it.", "instead": "Leiter, Verantwortlicher"},
-    {"term": "Diplom-, Dipl.-", "reason": "An academic degree prefix he does not hold.", "instead": "state the actual qualification"},
+    {"term": "Diplom-, Dipl.-", "reason": "An academic degree prefix they does not hold.", "instead": "state the actual qualification"},
     {"term": "Lehrer", "reason": "Implies state teaching qualification.", "instead": "Dozent for adult education, Trainer for corporate"},
     {"term": "Berater (unqualified)", "reason": "Fine in compounds like Kundenberater. Avoid alone where it could read as Steuerberater or Rechtsberater, both regulated.", "instead": "Consultant, or name the domain"}
   ],
 
   "job_titles": {
     "rule": "Titles held at international employers stay in the language they were held in. That is conventional on German CVs for such employers, and it removes the protected-title problem at source.",
-    "examples": ["Global Enablement Content Lead, Mimecast GmbH", "Principal Technical Education Consultant, Symantec (Deutschland) GmbH"]
+    "examples": ["Enablement Manager, Acme Software GmbH", "Technical Trainer, Globex GmbH"]
   },
 
   "section_headings": {
@@ -43,8 +43,8 @@
     "Hyphenated compounds are wrapped in a nowrap span by render.py. A line break on the hyphen makes pdftotext drop it, so Enablement-Programm extracts as EnablementProgramm and a parser indexes a word that does not exist. ats_check verifies every compound in the source survived.",
     "German runs roughly twenty percent longer than English, so the same content overflows. --since 2013 holds two bullets per role at two pages; without it the fit falls to one.",
     "No em dashes, per profile/writing-style.md. German uses them even more freely than English, so this needs watching in translated text.",
-    "No photo and no date of birth, per his standing rule, even though German convention still expects both. This is a deliberate choice, not an oversight."
+    "No photo and no date of birth, per their standing rule, even though German convention still expects both. This is a deliberate choice, not an oversight."
   ],
 
-  "_review_status": "The 28 German bullets in career.json were drafted 2026-09-18 and have not been read by a native speaker. He is fluent spoken, so reading them aloud will catch anything that sounds wrong. Nothing here should go to an employer before that."
+  "_review_status": "The 28 German bullets in career.json were drafted 2026-09-18 and have not been read by a native speaker. They is fluent spoken, so reading them aloud will catch anything that sounds wrong. Nothing here should go to an employer before that."
 }

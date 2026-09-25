@@ -30,7 +30,7 @@ guide to where to apply than any job board.
 The export only records where people work *now*. Two other paths are worth checking by
 hand:
 
-- **Alumni overlap.** The user spent years at Symantec, Fidor, Mimecast, and Keepit.
+- **Alumni overlap.** Check every employer in the user's career.json.
   People move. Ask whether they remember anyone who went to the target company.
 - **Domain overlap.** Enablement and AI tooling are small worlds. A former colleague may
   know someone without working there.

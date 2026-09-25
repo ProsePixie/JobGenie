@@ -2,7 +2,7 @@
 """Build a timed run sheet for a live training session, with the audience
 responsiveness scripted into it rather than left to improvisation.
 
-Written after the Bots and People casting on 2026-08-15, where the feedback was
+Written after a live training casting where the feedback was
 "great trainer, excellent knowledge, perfect presentation, did not respond to
 the audience enough". That is a delivery mechanic, not a knowledge gap, and the
 fix is not to hope to improvise better on the day. It is to prepare the

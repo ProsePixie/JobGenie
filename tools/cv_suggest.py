@@ -48,12 +48,15 @@ bevorzugt rolle kompetenz kompetenzen sehr gute gutes fundierte fundiertes
 """.split())
 
 
-WRITTEN_GERMAN = re.compile(
-    r"(deutsch|german)[^.;]{0,60}(schrift|written|verhandlungssicher|c1|c2)|"
-    r"(schrift|written|verhandlungssicher)[^.;]{0,60}(deutsch|german)")
+def written_language(lang):
+    """A requirement for this language in writing, or at a high level."""
+    n = "|".join(re.escape(x.lower()) for x in
+                 [lang.get("language", "")] + (lang.get("names") or []) if x)
+    lv = r"schrift|written|verhandlungssicher|c1|c2|fluent|native"
+    return re.compile(r"(%s)[^.;]{0,60}(%s)|(%s)[^.;]{0,60}(%s)" % (n, lv, lv, n))
 
 
-# Personal qualities and conditions: true or not of him, but nothing a CV
+# Personal qualities and conditions: true or not of them, but nothing a CV
 # bullet covers. Scored as keywords they filled the requirement list with
 # "gaps" (motivation, a driving licence, being a team player) and buried the
 # real ones.
@@ -126,6 +129,14 @@ def load(name):
     return json.loads((ROOT / "profile" / name).read_text(encoding="utf-8"))
 
 
+def cv_languages():
+    try:
+        m = json.loads((ROOT / "profile" / "market.json").read_text(encoding="utf-8"))
+        return [x for x in m.get("cv_languages") or [] if x] or ["en"]
+    except (OSError, ValueError):
+        return ["en"]
+
+
 def detect_lang(text):
     low = " %s " % re.sub(r"[^\wäöüß]+", " ", (text or "").lower())
     hits = sum(1 for w in GERMAN_WORDS if " %s " % w in low)
@@ -181,6 +192,10 @@ def suggest(posting, title="", ctx=None, force_base=None):
     # when the posting text could not be fetched.
     lang = (detect_lang("%s\n%s" % (title, posting)) if (posting or "").strip() or
             re.search(r"\((m|w|d|x)/(m|w|d|x)", title or "", re.I) else tdoc["bases"][base]["lang"])
+    # Only a language the user writes CVs in (profile/market.json cv_languages).
+    allowed = cv_languages()
+    if lang not in allowed:
+        lang = tdoc["bases"][base]["lang"] if tdoc["bases"][base]["lang"] in allowed else allowed[0]
 
     rows = []
     for t in tdoc["threads"]:
@@ -201,8 +216,8 @@ def suggest(posting, title="", ctx=None, force_base=None):
     # Cross-over (the user's call, 2026-09-24): on a Service CV, a professional
     # thread the posting clearly asks for comes in as Strong. An IT-Administrator
     # posting matched the Technical thread on "firewall", and the Service CV
-    # still left out every Symantec encryption and lab bullet, the best
-    # evidence he has for it. Not the other way round: the service threads'
+    # still left out every encryption and lab bullet from one employer, the best
+    # evidence they have for it. Not the other way round: the service threads'
     # plain rewordings add nothing a professional CV lacks.
     if base == "service":
         room = tdoc.get("max_strong", 2) - sum(1 for v in dials.values() if v == "strong")
@@ -216,7 +231,7 @@ def suggest(posting, title="", ctx=None, force_base=None):
             dials[r["id"]] = "strong"
             reasons[r["id"]] = "Strong (from the Professional side): posting mentions %s" % (
                 ", ".join(r["matched"][:4]))
-    # The user's own framing (2026-09-24): enablement is the backbone of all his
+    # The user's own framing (2026-09-24): enablement is the backbone of all their
     # professional work, and AI belongs in nearly every CV now. Never Off there.
     if base == "professional":
         for tid in ("enablement", "ai"):
@@ -281,16 +296,18 @@ def requirements(posting, spec, ctx, limit=8):
     langs = ctx["career"].get("languages") or []
     shown += " " + " ".join("%s %s" % (x.get("language", ""), x.get("language_de", ""))
                             for x in langs)
-    german = next((x for x in langs if x.get("language") == "German"), {})
+    # A language the user holds only partly (career.json languages[].gate).
+    gated = [x for x in langs if x.get("gate")]
     shown_low, everything_low = shown.lower(), everything.lower()
     out = []
     for line in lines:
         low = line.lower()
-        # Written German is a gate in his own data (career.json languages), not
-        # a keyword: say so rather than scoring the line on its words.
-        if german.get("gate") and WRITTEN_GERMAN.search(low):
+        # A language the user holds only partly is a gate, not a keyword: say so
+        # rather than scoring the line on its words.
+        g = next((x for x in gated if written_language(x).search(low)), None)
+        if g:
             out.append({"text": line, "status": "gap", "matched": [], "bullets": [],
-                        "note": "Language gate: %s" % (german.get("honest_detail") or german["gate"])})
+                        "note": "Language gate: %s" % (g.get("honest_detail") or g["gate"])})
             continue
         hit = next((b for b in blocked if re.search(r"(?<!\w)%s(?!\w)" % re.escape(b), low)), None)
         if hit:

@@ -12,7 +12,7 @@ analyze, center, specialize, catalog, license, fiber, judgment, canceled, modeli
 
 Not: organisation, programme, standardise, localisation, behaviour, sceptical.
 
-This applies even when writing to a UK or European employer. It is his voice, not a
+This applies even when writing to a UK or European employer. It is their voice, not a
 regional convention to be matched to the reader.
 
 **One exception: dates are European order, day, month, year.** Stated by the user on
@@ -67,7 +67,7 @@ trained to set such applications aside rather than risk it.
   `career.json` is listed, at least as one line with title, employer and dates; at least
   four bullets of real work; applicable skills shown. `render/ats_check.py` fails any CV
   that breaks this, and `tools/smoke_test.py` runs it for every persona. A persona that
-  fails gets more of his real bullets tagged, never a softer rule.
+  fails gets more of their real bullets tagged, never a softer rule.
 - Two pages maximum. One page is fine and often better.
 - Reverse chronological within sections; section order comes from the selected persona.
 - Every bullet starts with a concrete verb or a category label, never with "Responsible for".

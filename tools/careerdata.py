@@ -12,13 +12,13 @@ from?" for every edit made after 2026-09-24.
 
 Paths are dotted, and a list is indexed by its entries' `id`:
 
-    identity.phone      roles.mimecast.end      certifications.aws-cp.year
+    identity.phone      roles.acme.end      certifications.aws-cp.year
 
-    py tools/careerdata.py get roles.mimecast.end
-    py tools/careerdata.py set roles.mimecast.end 2024-01 --source "user, in chat"
-    py tools/careerdata.py add-bullet mimecast --text "Built ..." --threads enablement \\
+    py tools/careerdata.py get roles.acme.end
+    py tools/careerdata.py set roles.acme.end 2024-01 --source "user, in chat"
+    py tools/careerdata.py add-bullet acme --text "Built ..." --threads enablement \\
         --tags onboarding --strength 3 --source "user, in chat"
-    py tools/careerdata.py history roles.mimecast
+    py tools/careerdata.py history roles.acme
 
 Values given to `set` are read as JSON when they parse (2021, true, ["a"])
 and as plain text otherwise.

@@ -13,7 +13,7 @@ cards for one application.
 Usage
     py tools/pipeline.py show
     py tools/pipeline.py show --open             only entries not yet closed
-    py tools/pipeline.py get omaze--ai-enablement-specialist-germany
+    py tools/pipeline.py get acme--enablement-manager
     py tools/pipeline.py record --company "Acme" --role "Enablement Lead" \\
         --set thread=enablement score=74 verdict=apply stage=scored \\
               'dimensions={"affinity": 80, "capability": 75}'

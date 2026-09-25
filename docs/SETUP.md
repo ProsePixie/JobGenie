@@ -30,7 +30,10 @@ Open the folder in Claude Code and type `/setup`. It will:
    `tools/careerdata.py`, which records where each came from in `profile/sources.jsonl`.
 3. Suggest 3-5 threads (positioning tracks) from your history, with target titles and
    vocabulary, for you to edit.
-4. Ask where and how you can work: location, commute, pay floor, languages.
+4. Ask where and how you can work, and write `profile/market.json`: home places and
+   country, regions that include you (for example "north america" or "emea"), the
+   languages you write CVs in, and any language you hold only partly. The job-board
+   watcher, the screen and the CV builder all read it, so the app works wherever you are.
 5. Create `profile/private/` and a `leak-terms.txt` for anything that must never appear in
    a sent document.
 

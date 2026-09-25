@@ -47,7 +47,7 @@ candidate's enablement thread perfectly and turned out to be conversational-bot 
 and telephony integration, and workflow automation. "Enablement" means enabling *systems*
 in one industry and enabling *people* in this one. The same trap sits beneath "Technical
 Trainer" when the role actually wants deep SME on a complex platform after a four-week
-ramp, which is how the PingUs engagement ended and how the candidate was told they were
+ramp, which is how one real engagement ended, with the candidate told they were
 "not technical enough".
 
 When the title says learning and the body says integration, name it and skip. Do not let
@@ -91,8 +91,8 @@ would carry it, or state that nothing currently does.
 Give the weighted total and the banded verdict.
 
 Before recommending an application at any band, ask whether a warm path exists. Check
-`profile/career.json` for employer overlap: someone from Symantec, Fidor, Mimecast, or
-Keepit may now work there. A referral beats a better cold application, and it takes
+`profile/career.json` for employer overlap: someone from a former employer may now work
+there. A referral beats a better cold application, and it takes
 minutes to check.
 
 ## Step 5 — Record

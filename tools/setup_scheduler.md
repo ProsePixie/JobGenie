@@ -9,7 +9,7 @@ by hand was the only way it ever ran.
 It runs in "Interactive only" mode: only while the machine is on and someone
 is logged in, never while locked out or logged off, and it never asked for
 or stored a password. That was deliberate - the alternative ("run whether
-logged on or not") needs Windows to hold his account password, which is a
+logged on or not") needs Windows to hold their account password, which is a
 real credential to manage for a job that is not worth it.
 
 ## Check on it

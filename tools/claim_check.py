@@ -94,17 +94,17 @@ def source_text():
 def company_names(exclude):
     """Watchlist companies, minus the target and minus every real past employer.
 
-    A letter naming a past employer (Symantec, Keepit, ...) is normal - that is
+    A letter naming a past employer (Acme, Globex, ...) is normal - that is
     what a career history is made of. What is not normal is a *prospect* company
     from watchlist.json showing up in a letter aimed at a different one, which is
     the copy-paste-drift failure mode this check exists to catch.
 
-    Known gap, not fixed: Mimecast is both a past employer (career.json) and a
+    Known gap, not fixed: an employer can be both a past employer (career.json) and a
     live watchlist target (security-awareness category) at the same time, so it
     is exempted here like any other past employer - a letter for a different
-    target company that wrongly names Mimecast will NOT be caught. Narrowing the
+    target company that wrongly names that employer will NOT be caught. Narrowing the
     exemption to close this would make the far more common case (a legitimate
-    "I built enablement at Mimecast" career-history line) fail every time
+    "I built enablement at Acme" career-history line) fail every time
     instead, which is the worse trade. If this specific company ever causes a
     real mismatch, catch it by hand the way Wayve and Quantum-Systems were
     caught in tools/watch_ats.py, not by weakening this exemption generally.

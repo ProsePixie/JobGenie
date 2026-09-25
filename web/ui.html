@@ -551,7 +551,7 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
 <section id="settings">
   <div class="card">
     <h2>Local availability (bridge work only)</h2>
-    <p class="hint">This governs one thing: the local Bundesagentur job-board search - retail,
+    <p class="hint">This governs one thing: the local job-board search (the optional German Bundesagentur source) - retail,
       shift work, anything that needs you physically present. It has no effect on remote roles,
       teaching applications, or freelance work; none of those care about a postal code or a
       shift pattern. Change the radius here and the very next "Check for new roles" run uses it -
@@ -636,7 +636,7 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
       <label style="display:flex;gap:6px;align-items:center;margin:0;text-transform:none">
         <input type="checkbox" id="logProblems" style="width:auto"> Problems only</label>
-      <input id="logFilter" placeholder="Filter, e.g. nintex or Finalize" style="flex:1">
+      <input id="logFilter" placeholder="Filter, e.g. acme or Finalize" style="flex:1">
       <button class="alt" id="logRefresh">Refresh</button>
     </div>
     <div id="logList" class="applog"></div>
@@ -1013,7 +1013,7 @@ $('#tGoToCaptures') && ($('#tGoToCaptures').onclick = () => showTab('pipe'));
 })();
 
 function guessCompanyRole(title){
-  // Best-effort only; he edits before creating anything from it. Common
+  // Best-effort only; they edits before creating anything from it. Common
   // ATS page-title shapes: "Role at Company", "Company - Role", "Role | Company".
   const t = (title || '').trim();
   let m = t.match(/^(.+?)\s+at\s+(.+)$/i);
@@ -1721,7 +1721,7 @@ function renderBuild(){
 async function switchBase(base){
   if (base === BSPEC.base) return;
   // Re-suggest the dials and language for the new base from the posting; keep
-  // his bullet choices, the headline and nothing else from the old base.
+  // their bullet choices, the headline and nothing else from the old base.
   const r = await post('/api/build/state', {id: B.id, fresh: true, base});
   if (!r.ok){ flash('#bflash', r.err || 'could not switch base', false); return; }
   const keep = {bullets: BSPEC.bullets, headline: BSPEC.headline};

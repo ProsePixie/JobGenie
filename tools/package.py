@@ -19,7 +19,7 @@ It is the last gate before sending, so it refuses rather than warns:
 
     py tools/package.py <slug>
     py tools/package.py <slug> --merge
-    py tools/package.py <slug> --enclose "Zeugnis Mimecast.pdf" --merge
+    py tools/package.py <slug> --enclose "Reference Acme.pdf" --merge
 """
 
 import argparse

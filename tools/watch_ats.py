@@ -231,8 +231,8 @@ def load_terms():
               "technical writer", "documentation", "tutorial", "developer advocate",
               "onboarding"]
     # Added for the US-facing remote direction chosen 2026-09-18. Customer
-    # success and solutions work is prepared performance against a product he
-    # would know, which is the shape that suits him, and it is the only one of
+    # success and solutions work is prepared performance against a product they
+    # would know, which is the shape that suits them, and it is the only one of
     # the three chosen routes that carries a salary and benefits.
     terms += ["customer success", "customer education", "customer onboarding",
               "solutions consultant", "solutions engineer", "sales engineer",
@@ -275,7 +275,7 @@ NEGATIVE = [
     # different job (hands-on cybersecurity engineering) that a "sicherheit"
     # root could otherwise pull in through a compound title.
     "it-sicherheit",
-    # Skilled trades with a German apprenticeship behind them. He is not one
+    # Skilled trades with a German apprenticeship behind them. They is not one
     # and cannot become one quickly, and they flooded the local results through
     # the word Elektronik.
     "elektroniker", "mechatroniker", "industriemechaniker", "montage",
@@ -318,34 +318,42 @@ NEGATIVE_COMPANIES = ["wayve", "quantum-systems"]
 # "germany", not "german": the bare stem tagged Germantown, Maryland as DACH.
 # German cities beyond the largest are listed because the Bundesagentur board
 # often gives only the town, and "Mainz" or "Bremen" came back "unclear".
-LOC_DACH = ["germany", "deutschland", "munich", "münchen", "muenchen", "berlin",
-            "hamburg", "cologne", "köln", "frankfurt", "stuttgart", "bavaria",
-            "bayern", "dach", "austria", "österreich", "vienna, austria",
-            "wien", "switzerland", "schweiz", "zurich", "zürich", "düsseldorf",
-            "dusseldorf", "leipzig", "dresden", "nuremberg", "nürnberg",
-            "mainz", "bremen", "hannover", "hanover", "essen", "dortmund", "bonn",
-            "mannheim", "karlsruhe", "augsburg", "regensburg", "ingolstadt",
-            "würzburg", "freiburg", "heidelberg", "darmstadt", "wiesbaden",
-            "münster", "kiel", "lübeck", "rostock", "potsdam", "erfurt", "jena",
-            "magdeburg", "braunschweig", "bielefeld", "aachen", "duisburg",
-            "bochum", "wuppertal", "saarbrücken", "ulm", "fürstenfeldbruck",
-            "germering", "starnberg", "dachau", "freising", "erding", "garching",
-            "unterschleißheim", "ismaning", "planegg", "martinsried", "gräfelfing",
-            "puchheim", "grafrath"]
+# Where the user can work comes from profile/market.json (written by /setup):
+#   home_places     towns, regions and countries they can reach ("springfield",
+#                   "illinois", "united states")
+#   home_countries  the country names, which alone outrank a US "Town, ST"
+#   wide_regions    regions that include home ("north america", "americas")
+#   us_home         true when home is in the US, so a "Town, ST" location is home
+# Everything in WORLD_PLACES that is not home is somewhere they cannot be.
+def _market():
+    import json as _json
+    p = ROOT / "profile" / "market.json"
+    try:
+        m = _json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        m = {}
+    low = lambda xs: [str(x).lower().strip() for x in xs or [] if str(x).strip()]  # noqa: E731
+    return {"home": low(m.get("home_places")) + low(m.get("home_countries")),
+            "countries": low(m.get("home_countries")), "wide": low(m.get("wide_regions")),
+            "us_home": bool(m.get("us_home"))}
 
-# Wide enough to include Germany, so a role scoped this way is reachable.
-LOC_WIDE = ["emea", "europe", "european", "eu remote", "remote eu"]
+
+MARKET, LOC_HOME, LOC_WIDE = {}, [], []
 # Wide only when nothing narrower is named: "Remote US or Canada; global team"
 # describes the company, not where the role may sit, while a bare "Global" or
 # "Worldwide" is genuinely open.
 LOC_WIDE_WEAK = ["anywhere", "worldwide", "global", "globally"]
-# A DACH country named outright, which a US-style ", ST" suffix cannot outrank.
-LOC_DACH_COUNTRY = ["germany", "deutschland", "austria", "österreich", "switzerland",
-                    "schweiz", "dach"]
 
-# Somewhere he cannot be, since Munich is fixed. Non-DACH Europe is in here
-# too: an on-site role in Sofia is no more available to him than one in Pune.
-LOC_ELSEWHERE = [
+# Places around the world. Anything here that is not the user's home is
+# rejected. German cities are listed because boards often give only the town.
+# Bare "vienna" once tagged Vienna, VA as Austria; "germany", not "german",
+# because the stem matched Germantown, Maryland.
+WORLD_PLACES = [
+    "germany", "deutschland", "munich", "münchen", "muenchen", "berlin", "hamburg",
+    "cologne", "köln", "frankfurt", "stuttgart", "bavaria", "bayern", "dach", "austria",
+    "österreich", "vienna, austria", "wien", "switzerland", "schweiz", "zurich", "zürich",
+    "düsseldorf", "dusseldorf", "leipzig", "dresden", "nuremberg", "nürnberg",
+    "emea", "europe", "european", "eu remote", "remote eu", "north america", "americas",
     "united states", "usa", "canada", "toronto", "ontario", "vancouver",
     "india", "bangalore", "bengaluru", "pune", "maharashtra", "hyderabad",
     "mumbai", "delhi", "chennai", "gurgaon", "noida", "singapore", "australia",
@@ -375,7 +383,23 @@ LOC_ELSEWHERE = [
 ]
 
 # Short forms need a word boundary; "us" as a substring matches "customer".
-LOC_ELSEWHERE_RE = re.compile(r"\b(u\.?s\.?a?|uk|uae|apac|latam|na|namer|nam)\b")
+_SHORT = {r"u\.?s\.?a?": "united states", "uk": "united kingdom", "uae": "united arab",
+          "apac": "apac", "latam": "latam", "na|namer|nam": "north america"}
+
+
+def set_market(market):
+    """Point the classifier at one user's home (profile/market.json shape, as
+    returned by _market). Called at import; tests call it with their own."""
+    global MARKET, LOC_HOME, LOC_WIDE, LOC_ELSEWHERE, LOC_ELSEWHERE_RE, HOME_SHORT_RE  # noqa: PLW0603
+    MARKET = market
+    LOC_HOME, LOC_WIDE = market["home"], market["wide"]
+    near = LOC_HOME + LOC_WIDE
+    # The places this user cannot be: the world, minus their home and wide regions.
+    LOC_ELSEWHERE = [p for p in WORLD_PLACES if not any(p == h or p in h or h in p for h in near)]
+    out = [k for k, place in _SHORT.items() if not any(place in h or h in place for h in near)]
+    LOC_ELSEWHERE_RE = re.compile(r"\b(%s)\b" % "|".join(out)) if out else re.compile(r"(?!x)x")
+    mine = [k for k, place in _SHORT.items() if any(place in h or h in place for h in LOC_HOME)]
+    HOME_SHORT_RE = re.compile(r"\b(%s)\b" % "|".join(mine)) if mine else re.compile(r"(?!x)x")
 
 # "Town, ST" with a US state code, which is how most US boards give a location
 # ("Germantown, MD"). Delaware's DE is left out: ", DE" is also Germany's
@@ -390,7 +414,7 @@ LOC_REMOTE = ["remote", "home office", "hybrid", "flexible", "distributed"]
 
 # German trade words are matched at the start of a word only, because German
 # builds compounds: "Lagerist" and "Produktionshelfer" are the trades, while
-# "Kundenpflege" (customer care) and "Videoproduktion" are exactly his work
+# "Kundenpflege" (customer care) and "Videoproduktion" are exactly their work
 # and were being thrown away. Everything else matches as a whole word: as a
 # substring, "intern" rejected every "International ..." and "Internal ..."
 # title, including an International Customer Success Manager.
@@ -424,40 +448,39 @@ def relevant(title, terms, company=""):
     return [t for t in terms if t in low]
 
 
-def classify_location(loc):
-    """allow, unclear or reject.
+set_market(_market())
 
-    Tested in this order on purpose. A DACH city wins outright. A role scoped
-    to all of Europe or EMEA includes Germany, so it is allowed unless it also
-    names somewhere he cannot be. Anything naming only a place he cannot be is
-    rejected even when the word "remote" is in the string, which is where this
-    used to let through a whole page of US and India roles. Bare "remote" with
-    no place attached is allowed, and an empty location stays unclear, because
-    a missing location is more often remote than disqualifying.
+
+def classify_location(loc):
+    """home, wide, remote, unclear or reject, against profile/market.json.
+
+    Tested in this order on purpose. A home place wins outright. A role scoped
+    to a region that includes home (wide_regions) is allowed even when it also
+    names somewhere else, so "Remote - US or Europe" is reachable. Anything
+    naming only a place the user cannot be is rejected even when "remote" is
+    in the string, which once let through a whole page of roles in the wrong
+    country. Bare "remote" is allowed; an empty location stays unclear.
     """
     low = (loc or "").lower()
     if not low.strip():
         return "unclear"
-    # A US state code outranks a German city name: Hanover NH, Potsdam NY,
-    # Berlin NH, Frankfurt KY and a dozen more are real US towns, and testing
-    # the DACH list first passed every one of them (the fix for Vienna, VA
-    # covered only Vienna). A named DACH country still wins.
-    if US_STATE_RE.search(low) and not any(k in low for k in LOC_DACH_COUNTRY):
-        return "reject"
-    if any(k in low for k in LOC_DACH):
-        return "dach"
-    # A role scoped to Europe, EMEA or the whole world includes Germany even
-    # when it also names somewhere he cannot be, so "Remote - US or Europe" is
-    # reachable. Testing this before the reject list is the whole point: the
-    # other order discarded every posting that offered both, which is most of
-    # the remote roles worth having.
+    # "Town, ST": a US state code. Home when the user is in the US; otherwise it
+    # outranks a European town name (Hanover NH, Berlin NH, Potsdam NY) unless a
+    # home country is named outright.
+    if US_STATE_RE.search(low):
+        if MARKET["us_home"]:
+            return "home"
+        if not any(k in low for k in MARKET.get("countries", [])):
+            return "reject"
+    if any(k in low for k in LOC_HOME) or HOME_SHORT_RE.search(low):
+        return "home"
     if any(k in low for k in LOC_WIDE):
-        return "europe"
-    if (any(k in low for k in LOC_ELSEWHERE)
-            or bool(LOC_ELSEWHERE_RE.search(low)) or bool(US_STATE_RE.search(low))):
+        return "wide"
+    if (any(k in low for k in LOC_ELSEWHERE) or bool(LOC_ELSEWHERE_RE.search(low))
+            or (US_STATE_RE.search(low) and not MARKET["us_home"])):
         return "reject"
     if any(k in low for k in LOC_WIDE_WEAK):
-        return "europe"
+        return "wide"
     if any(k in low for k in LOC_REMOTE):
         return "remote"
     return "unclear"
@@ -635,7 +658,7 @@ def run(only_new=True, anywhere=False):
         if ats == "arbeitsagentur":
             params = dict(src.get("params") or {})
             # A source scoped to a radius ("wo") is the local-commute search,
-            # and the postal code and radius that actually matter live in his
+            # and the postal code and radius that actually matter live in their
             # availability, editable from Settings, not in this file. Without
             # this, changing the radius in Settings had no effect at all:
             # sources.json's own stored value is what a discovery happened to
@@ -734,7 +757,7 @@ def main():
     ap.add_argument("--run", action="store_true")
     ap.add_argument("--all", action="store_true", help="ignore the seen history")
     ap.add_argument("--anywhere", action="store_true",
-                    help="include roles outside Germany, DACH and remote")
+                    help="include roles outside your home area (profile/market.json)")
     ap.add_argument("--json", action="store_true", dest="as_json")
     args = ap.parse_args()
 
