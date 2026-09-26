@@ -5,3 +5,5 @@
 *.pdf binary
 *.png binary
 *.jpg binary
+*.bat text eol=crlf
+*.sh text eol=lf

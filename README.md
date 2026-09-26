@@ -10,8 +10,22 @@ tracking system reads them, and packages what you send. It will not invent a sin
 Built during a real job search, for one: every feature exists because an application
 went wrong without it.
 
-> Status: complete and tested, and runs for anyone, anywhere: guided onboarding from your
-> own CV (`/setup`), scoring, building, checking and packaging. See the [ROADMAP](ROADMAP.md).
+## Why this is different
+
+This is not a prompt wrapper around a chatbot. Your career facts live as structured,
+traceable data, and every document is rendered from them; when Claude drafts a letter, it
+works in a sandbox and can only use what your data supports. Every CV is then checked the
+way an applicant-tracking system reads it, and nothing is packaged until it passes. The
+deeper reasoning is under [Why it exists](#why-it-exists) and in
+[How it works](docs/HOW-IT-WORKS.md).
+
+**[Architecture](docs/ARCHITECTURE.md)** · **[Setup guide](docs/SETUP.md)** ·
+**[Contributing](CONTRIBUTING.md)** · **[Sample CV](docs/sample/Jane_Doe_CV.pdf)**
+
+> Status: complete and tested on the fictional example profile: guided onboarding from
+> your own CV (`/setup`), scoring, building, checking and packaging. It runs locally on
+> Windows, macOS and Linux, configured for your location and languages. See the
+> [ROADMAP](ROADMAP.md) for what is next.
 
 ![Pipeline board](docs/img/pipeline.png)
 
@@ -47,6 +61,11 @@ cannot survive. JobGenie is built the other way round:
 
 ## See it
 
+Three things worth noticing: the score shows its working line by line instead of being a
+mysterious number; the Build panel exposes the positioning it chose (which thread leads)
+and which evidence it selected; and the sample CV is the actual final artifact, as an
+applicant-tracking system would receive it.
+
 Every posting gets a score with its reasons, including the gaps:
 
 ![Score breakdown](docs/img/score.png)
@@ -66,18 +85,49 @@ And a readable log of everything the app did:
 ## Quick start
 
 Needs Python 3.10+, Chrome or Edge, and poppler (`pdftotext`; `pdfunite` only for a merged PDF). No pip installs.
+On Windows, use `py` wherever this page says `python3`.
+
+**Path 1: try the fictional example profile** (safe for a demo; no personal data)
 
 ```bash
 git clone https://github.com/ProsePixie/JobGenie && cd JobGenie
-python3 tools/doctor.py                # checks Chrome, poppler and Python, says how to fix
-cp -r profile.example profile          # the fictional Jane Doe, to try it
+./setup.sh                             # Windows: setup.bat
 python3 web/server.py                  # opens the app at http://127.0.0.1:8777
 ```
 
-Then make it yours: put your CV (PDF or DOCX) in `inbox/`, open the folder in Claude Code
-and run **`/setup`**. It proposes each fact from your CV and writes only what you confirm.
-(On Windows, use `py` instead of `python3`.) Full guide:
-[docs/SETUP.md](docs/SETUP.md).
+The helper checks your tools and copies the fictional Jane Doe to `profile/` if you have
+no profile yet. It never overwrites an existing profile and installs nothing. Without
+it, the same thing by hand:
+
+```bash
+python3 tools/doctor.py                # checks Chrome, poppler and Python, says how to fix
+cp -r profile.example profile          # the fictional Jane Doe
+python3 web/server.py
+```
+
+**Path 2: create your own profile** (needs [Claude Code](https://claude.com/claude-code))
+
+1. Start from a blank profile: `python3 tools/new_profile.py` (if you tried Jane Doe
+   first, rename or remove `profile/` before this).
+2. Put your CV (PDF or DOCX) in `inbox/`.
+3. Open the folder in Claude Code and type **`/setup`**. It proposes each fact from your
+   CV and writes only what you confirm.
+
+Full guide: [docs/SETUP.md](docs/SETUP.md).
+
+## Testing
+
+```bash
+python3 -m unittest discover tests -v  # fast regression tests; Python only
+python3 render/render.py --check       # validates the data in profile/
+python3 tools/smoke_test.py            # builds and ATS-checks a CV per thread; needs Chrome/Edge and pdftotext
+```
+
+The [regression tests](tests/) need only Python (with a profile in place, for example the
+fictional one). The smoke test renders real PDFs, so it needs Chrome or Edge and poppler.
+The web UI is checked by hand in a browser, and the AI steps (`/setup`, letter drafting,
+fit analysis) need Claude Code. CI runs the regression tests and renders and checks a real
+CV on every push.
 
 ## How it fits together
 
@@ -90,8 +140,10 @@ posting.txt ──screen──┘      (base + dials)     └─> render/ats_che
 web/server.py: local UI over all of it (127.0.0.1 only, stdlib only)
 ```
 
-`CLAUDE.md` holds the rules every Claude Code session follows in this repo.
-**[How it works, and why it is built this way](docs/HOW-IT-WORKS.md)** explains the design decisions.
+The **[architecture document](docs/ARCHITECTURE.md)** covers the safety boundaries, the
+rendering and verification pipeline, and how the web UI delegates to these same scripts.
+**[How it works, and why it is built this way](docs/HOW-IT-WORKS.md)** explains the design
+decisions. `CLAUDE.md` holds the rules every Claude Code session follows in this repo.
 
 ## Limits, stated plainly
 
@@ -101,6 +153,15 @@ web/server.py: local UI over all of it (127.0.0.1 only, stdlib only)
 - The score matches words, not meaning: it is reliable for spotting gaps and what a CV
   leaves out, less so on short or generic postings. Every line of it is shown so you can judge.
 - CVs in English and German today.
+- The example profile (Jane Doe) is fictional. Your own data lives only in `profile/`,
+  which is gitignored.
+- It is a local-first tool, not a hosted service: nothing runs on a server you do not
+  control.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md): how to set up, run the checks, and keep real
+personal data out of issues, pull requests and commits.
 
 ## License
 

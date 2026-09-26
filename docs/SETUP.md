@@ -18,9 +18,13 @@ what it found.
 ## 2. Try it with the example candidate
 
 ```bash
-cp -r profile.example profile
+./setup.sh          # macOS, Linux, WSL. Windows (Command Prompt): setup.bat
 python3 web/server.py
 ```
+
+The helper copies the fictional Jane Doe to `profile/` if you have no profile yet (it
+never overwrites one), then runs the doctor. It installs nothing. By hand, the same is
+`cp -r profile.example profile`.
 
 ## 3. Make it yours: `/setup`
 
