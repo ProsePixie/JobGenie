@@ -4,7 +4,7 @@
 The CV builder (render/cv_builder.py) is the only way a CV is made since the
 switch-over from personas. This builds every thread in profile/threads.json
 as Lead on its own base, in its base's language, and every professional thread
-in German as well, then runs each through render/ats_check.py: the text layer,
+in German as well when German is in profile/market.json cv_languages, then runs each through render/ats_check.py: the text layer,
 the chronology, and the substance gate. Nothing is written outside a
 throwaway folder, which is removed afterwards.
 
@@ -38,7 +38,12 @@ def smoke_builder(server):
     # thread in German too: a German CV leaves out bullets with no text_de, and
     # an AI-led German CV once came out with a single bullet, untested.
     runs = [(t, None) for t in ctx["threads"]["threads"]]
-    runs += [(t, "de") for t in ctx["threads"]["threads"] if t["base"] == "professional"]
+    # German only when the user writes CVs in German (profile/market.json
+    # cv_languages): an English-only user's smoke test failed every German build.
+    sys.path.insert(0, str(ROOT / "tools"))
+    import cv_suggest  # noqa: E402
+    if "de" in cv_suggest.cv_languages():
+        runs += [(t, "de") for t in ctx["threads"]["threads"] if t["base"] == "professional"]
     for t, lang in runs:
         spec = cv_builder.default_spec(t["base"], lang=lang, lead=t["id"], ctx=ctx)
         label = "%s%s" % (t["id"], "/de" if lang else "")
@@ -75,8 +80,10 @@ def main():
     if failures:
         print("%d build(s) FAILED: %s" % (len(failures), ", ".join(failures)))
         return 1
-    print("Every thread built as Lead, in its base's language and professional threads in "
-          "German too, and passed ats_check.")
+    sys.path.insert(0, str(ROOT / "tools"))
+    import cv_suggest  # noqa: E402
+    print("Every thread built as Lead, in its base's language%s, and passed ats_check."
+          % (" (and professional threads in German)" if "de" in cv_suggest.cv_languages() else ""))
     return 0
 
 

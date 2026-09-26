@@ -80,6 +80,73 @@
             "facilitation"
           ],
           "strength": 2
+        },
+        {
+          "id": "acme-5",
+          "text": "Built a prompt library and short video guides that helped 300 sales reps adopt an AI note-taking tool.",
+          "threads": [
+            "ai",
+            "media"
+          ],
+          "tags": [
+            "ai",
+            "adoption",
+            "video"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "acme-6",
+          "text": "Automated weekly training-completion reports with Python scripts that feed the LMS dashboard.",
+          "threads": [
+            "ai",
+            "technical"
+          ],
+          "tags": [
+            "python",
+            "lms",
+            "reporting"
+          ],
+          "strength": 2
+        },
+        {
+          "id": "acme-7",
+          "text": "Writes the release notes and two-minute update videos that every customer-facing team reads before a launch.",
+          "threads": [
+            "media",
+            "enablement"
+          ],
+          "tags": [
+            "release notes",
+            "video"
+          ],
+          "strength": 2
+        },
+        {
+          "id": "acme-8",
+          "text": "Piloted an AI assistant for support agents, measuring answer accuracy on 200 real tickets before rollout.",
+          "threads": [
+            "ai"
+          ],
+          "tags": [
+            "ai",
+            "evaluation",
+            "support"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "acme-9",
+          "text": "Answers escalated customer questions in the training help channel within one business day.",
+          "threads": [
+            "svc-general",
+            "enablement"
+          ],
+          "tags": [
+            "customer service",
+            "support"
+          ],
+          "strength": 2
         }
       ]
     },
@@ -98,7 +165,8 @@
           "text": "Delivered administrator training on the company's cloud platform to enterprise customers, live and virtual.",
           "threads": [
             "enablement",
-            "technical"
+            "technical",
+            "svc-general"
           ],
           "tags": [
             "training",
@@ -115,6 +183,69 @@
           ],
           "tags": [
             "documentation"
+          ],
+          "strength": 2
+        },
+        {
+          "id": "globex-3",
+          "text": "Configured sandbox tenants and single sign-on test accounts for 20 training cohorts.",
+          "threads": [
+            "technical"
+          ],
+          "tags": [
+            "sso",
+            "sandbox"
+          ],
+          "strength": 2
+        },
+        {
+          "id": "globex-4",
+          "text": "Recorded and edited 40 short product walkthrough videos for the customer portal.",
+          "threads": [
+            "media"
+          ],
+          "tags": [
+            "video",
+            "documentation"
+          ],
+          "strength": 2
+        },
+        {
+          "id": "globex-5",
+          "text": "Troubleshot customer cloud configurations live in workshops and logged product issues for engineering.",
+          "threads": [
+            "technical",
+            "enablement",
+            "svc-general"
+          ],
+          "tags": [
+            "troubleshooting",
+            "cloud"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "globex-6",
+          "text": "Redesigned the course slide template and style guide used across 30 training courses.",
+          "threads": [
+            "media"
+          ],
+          "tags": [
+            "design",
+            "style guide"
+          ],
+          "strength": 2
+        },
+        {
+          "id": "globex-7",
+          "text": "Ran the customer training desk: scheduling, enrollment questions and certificate reissues for about 1,500 learners a year.",
+          "threads": [
+            "svc-general",
+            "enablement"
+          ],
+          "tags": [
+            "customer service",
+            "scheduling"
           ],
           "strength": 2
         }
@@ -143,6 +274,93 @@
             "python"
           ],
           "strength": 3
+        },
+        {
+          "id": "example-project-2",
+          "text": "Wrote the onboarding guide and a two-minute demo video for new users.",
+          "threads": [
+            "ai",
+            "media"
+          ],
+          "tags": [
+            "documentation",
+            "video"
+          ],
+          "strength": 2
+        },
+        {
+          "id": "example-project-3",
+          "text": "Runs on a free hosting tier with automated nightly backups.",
+          "threads": [
+            "ai",
+            "technical"
+          ],
+          "tags": [
+            "hosting",
+            "backups"
+          ],
+          "strength": 2
+        }
+      ]
+    },
+    {
+      "id": "initech-retail",
+      "title": "Customer Service Associate",
+      "org": "Initech Electronics",
+      "org_type": "retail",
+      "start": "2013-06",
+      "end": "2015-12",
+      "location": "Springfield",
+      "mode": "onsite",
+      "bullets": [
+        {
+          "id": "initech-retail-1",
+          "text": "Served 80 or more customers a shift at the tech counter, from returns to new device setup.",
+          "threads": [
+            "svc-general"
+          ],
+          "tags": [
+            "customer service",
+            "retail"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "initech-retail-2",
+          "text": "Set up phones and laptops for customers and explained the basics in plain language.",
+          "threads": [
+            "svc-general",
+            "technical"
+          ],
+          "tags": [
+            "device setup",
+            "support"
+          ],
+          "strength": 3
+        },
+        {
+          "id": "initech-retail-3",
+          "text": "Trained four new associates on the point-of-sale system and the returns policy.",
+          "threads": [
+            "svc-general",
+            "enablement"
+          ],
+          "tags": [
+            "training",
+            "pos"
+          ],
+          "strength": 2
+        },
+        {
+          "id": "initech-retail-4",
+          "text": "Balanced the register and completed the cash report at closing.",
+          "threads": [
+            "svc-general"
+          ],
+          "tags": [
+            "cash handling"
+          ],
+          "strength": 2
         }
       ]
     }
@@ -167,6 +385,27 @@
       "threads": [
         "enablement"
       ]
+    },
+    {
+      "id": "comptia-a",
+      "name": "CompTIA A+",
+      "issuer": "CompTIA",
+      "year": "2014",
+      "strength": 2,
+      "threads": [
+        "technical",
+        "svc-general"
+      ]
+    },
+    {
+      "id": "video-cert",
+      "name": "Camtasia Certified Video Creator",
+      "issuer": "TechSmith",
+      "year": "2019",
+      "strength": 2,
+      "threads": [
+        "media"
+      ]
     }
   ],
   "skills": {
@@ -189,7 +428,8 @@
         "ChatGPT",
         "Claude",
         "prompt design",
-        "AI-assisted content workflows"
+        "AI-assisted content workflows",
+        "Python scripting"
       ],
       "threads": [
         "ai"
@@ -207,6 +447,45 @@
         "enablement",
         "technical"
       ]
+    },
+    "media": {
+      "label": "Content & Media",
+      "items": [
+        "video editing (Camtasia)",
+        "technical writing",
+        "storyboarding",
+        "screen recording",
+        "Canva"
+      ],
+      "threads": [
+        "media"
+      ]
+    },
+    "technical": {
+      "label": "Technical",
+      "items": [
+        "single sign-on (SAML) basics",
+        "sandbox administration",
+        "Python scripting",
+        "REST APIs",
+        "troubleshooting"
+      ],
+      "threads": [
+        "technical"
+      ]
+    },
+    "service": {
+      "label": "Customer Service",
+      "items": [
+        "point of sale",
+        "cash handling",
+        "returns and exchanges",
+        "device setup",
+        "calm de-escalation"
+      ],
+      "threads": [
+        "svc-general"
+      ]
     }
   },
   "languages": [
@@ -214,6 +493,11 @@
       "language": "English",
       "level": "Native",
       "working": true
+    },
+    {
+      "language": "Spanish",
+      "level": "Conversational",
+      "working": false
     }
   ]
 }
