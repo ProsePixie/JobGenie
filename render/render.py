@@ -12,8 +12,8 @@ Standard library only. No LaTeX, no pip installs. Chrome or Edge does the
 PDF; pdftotext (ships with Git for Windows) does the text layer.
 
 Usage
-    py render/render.py --check
-    py render/render.py --base professional --lead ai --threads "enablement=strong" \
+    python3 render/render.py --check
+    python3 render/render.py --base professional --lead ai --threads "enablement=strong" \
         --out applications/acme-pe --posting applications/acme-pe/posting.txt
 
 Selection (bases, thread dials, bullets) lives in render/cv_builder.py; this
@@ -26,6 +26,7 @@ is never written into a document. It is omitted and reported on the console.
 import argparse
 import html
 import json
+import os
 from html.parser import HTMLParser
 import re
 import shutil
@@ -335,6 +336,11 @@ def ensure_exact_case(path):
 
 
 def find_chrome():
+    # CHROME_PATH first: documented in CLAUDE.md, and the only way to point at a
+    # Chrome installed somewhere unusual.
+    env = os.environ.get("CHROME_PATH", "").strip()
+    if env and (Path(env).exists() or shutil.which(env)):
+        return env if Path(env).exists() else shutil.which(env)
     for c in CHROME_CANDIDATES:
         if Path(c).exists():
             return c
@@ -416,6 +422,12 @@ def write_pdf(html_path, pdf_path, chrome):
             chrome,
             "--headless=new",
             "--disable-gpu",
+        ]
+        # Linux containers and CI runners often block Chrome's sandbox, and it
+        # then exits with no PDF and nothing on stderr. CHROME_NO_SANDBOX=1 opts out.
+        if os.environ.get("CHROME_NO_SANDBOX") == "1":
+            cmd.append("--no-sandbox")
+        cmd += [
             "--no-first-run",
             "--no-pdf-header-footer",
             "--run-all-compositor-stages-before-draw",

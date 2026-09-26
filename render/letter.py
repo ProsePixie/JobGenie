@@ -32,9 +32,9 @@ Supported markdown: paragraphs, `- ` bullets, **bold**, *italic*. That is the
 whole grammar a cover letter needs, and keeping it small means no dependency.
 
 Usage
-    py render/letter.py applications/acme/letter.md
-    py render/letter.py applications/acme/letter.md --html-only
-    py render/letter.py applications/acme/letter.md --basename Jane_Doe_Letter
+    python3 render/letter.py applications/acme/letter.md
+    python3 render/letter.py applications/acme/letter.md --html-only
+    python3 render/letter.py applications/acme/letter.md --basename Jane_Doe_Letter
 """
 
 import argparse

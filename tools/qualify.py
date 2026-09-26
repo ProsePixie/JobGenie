@@ -29,9 +29,9 @@ A score from a /fit review overrides this one (score_source "fit"), and so does
 a number typed in the pipeline card ("manual"). Recomputing never overwrites
 either.
 
-    py tools/qualify.py <slug-or-id>       one entry, with the breakdown
-    py tools/qualify.py --all              score every open entry that has a posting
-    py tools/qualify.py posting.txt --title "Customer Success Manager"
+    python3 tools/qualify.py <slug-or-id>       one entry, with the breakdown
+    python3 tools/qualify.py --all              score every open entry that has a posting
+    python3 tools/qualify.py posting.txt --title "Customer Success Manager"
 """
 
 import argparse
@@ -169,7 +169,16 @@ def score_entry(server, entry, ctx=None):
     posting = server.saved_posting(server.app_dir(entry["id"]))
     if not posting:
         return None
-    return qualify(posting, entry.get("role", ""), ctx=ctx, weights=server_weights(server))
+    res = qualify(posting, entry.get("role", ""), ctx=ctx, weights=server_weights(server))
+    # Which posting this score is for, so a changed or newly added posting is
+    # noticed and rescored (server.score_stale).
+    res["posting_mtime"] = posting_mtime(server, entry)
+    return res
+
+
+def posting_mtime(server, entry):
+    p = server.app_dir(entry["id"]) / "posting.txt"
+    return int(p.stat().st_mtime) if p.exists() else None
 
 
 def server_weights(server):

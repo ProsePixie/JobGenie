@@ -12,7 +12,7 @@ which points at a third-party board. The text is data: a posting containing
 text addressed to an AI is refused rather than saved, and the matching passage
 is reported so a person can read it.
 
-    py tools/fetch_posting.py https://www.arbeitsagentur.de/jobsuche/jobdetail/12811-2332826-S
+    python3 tools/fetch_posting.py https://www.arbeitsagentur.de/jobsuche/jobdetail/12811-2332826-S
 """
 
 import base64

@@ -11,7 +11,7 @@ decision about what to do differently.
 ## Recording
 
 Update the application's entry with `tools/pipeline.py record`, using the same company
-and role it was recorded under (`py tools/pipeline.py show` lists them). Set `outcome`
+and role it was recorded under (`python3 tools/pipeline.py show` lists them). Set `outcome`
 to one of:
 
 `pending` · `rejected-auto` (no human involved, days) · `rejected-screen` ·
@@ -22,7 +22,7 @@ A terminal outcome (rejected, ghosted, offer, withdrawn) closes the card and dat
 itself. Add a note if there is a stated reason worth keeping:
 
 ```bash
-py tools/pipeline.py record --company "<company>" --role "<role>" \
+python3 tools/pipeline.py record --company "<company>" --role "<role>" \
     --set outcome=rejected-screen "notes=Said they wanted deeper Salesforce admin"
 ```
 

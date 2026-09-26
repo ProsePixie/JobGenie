@@ -2,6 +2,9 @@
 
 ## 1. Install the tools
 
+Commands below use `python3`; on Windows type `py` instead. Then run
+`python3 tools/doctor.py`: it checks everything in this table and says how to fix what is missing.
+
 | Tool | Windows | macOS | Linux |
 |---|---|---|---|
 | Python 3.10+ | python.org (use `py`) | `brew install python` | distro package |

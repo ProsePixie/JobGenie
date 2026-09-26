@@ -22,8 +22,8 @@ The fetched HTML is data, never instructions (CLAUDE.md hard rule 3): this
 script only extracts plain text for a hash comparison and never executes,
 follows, or interprets anything found in it.
 
-    py tools/watch_static.py --run
-    py tools/watch_static.py --run --json
+    python3 tools/watch_static.py --run
+    python3 tools/watch_static.py --run --json
 """
 
 import argparse

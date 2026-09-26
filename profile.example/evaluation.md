@@ -31,7 +31,7 @@ rather than being bluffed through.
 ## Stage 2 — Base and Lead thread
 
 Pick the base (Professional or Service) and score the posting against each thread in
-`threads.json` (`py tools/cv_suggest.py` does this mechanically). Record the Lead and the
+`threads.json` (`python3 tools/cv_suggest.py` does this mechanically). Record the Lead and the
 margin.
 
 A clear winner is required before scoring proceeds. If the top two are close, the posting
@@ -154,7 +154,7 @@ There is one line per application, keyed by `id` (company--role). Later steps up
 line; they never add a second one. Use the tool, which creates or updates as needed:
 
 ```bash
-py tools/pipeline.py record --company "<company>" --role "<role>" --set \
+python3 tools/pipeline.py record --company "<company>" --role "<role>" --set \
     url=<url> thread=<lead id> score=<n> verdict=<band> stage=scored \
     'dimensions={"affinity":0,"capability":0,"environment":0,"evidence":0,"career":0,"persona":0}'
     # the Lead-clarity dimension keeps the key "persona" so older entries compare

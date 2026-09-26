@@ -11,13 +11,13 @@ one, /apply appended another for the same posting, and the board showed two
 cards for one application.
 
 Usage
-    py tools/pipeline.py show
-    py tools/pipeline.py show --open             only entries not yet closed
-    py tools/pipeline.py get acme--enablement-manager
-    py tools/pipeline.py record --company "Acme" --role "Enablement Lead" \\
+    python3 tools/pipeline.py show
+    python3 tools/pipeline.py show --open             only entries not yet closed
+    python3 tools/pipeline.py get acme--enablement-manager
+    python3 tools/pipeline.py record --company "Acme" --role "Enablement Lead" \\
         --set thread=enablement score=74 verdict=apply stage=scored \\
               'dimensions={"affinity": 80, "capability": 75}'
-    py tools/pipeline.py record --company "Acme" --role "Enablement Lead" \\
+    python3 tools/pipeline.py record --company "Acme" --role "Enablement Lead" \\
         --set outcome=rejected-auto
 
 `record` creates the entry if it does not exist and updates it if it does.

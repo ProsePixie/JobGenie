@@ -6,8 +6,8 @@ Instant and free: word matching against profile/threads.json and career.json,
 no model call. The AI refinement (Analyze fit) is a separate, optional step.
 See plans/cv-builder.md, step 1.4.
 
-    py tools/cv_suggest.py posting.txt --title "Customer Success Manager"
-    py tools/cv_suggest.py posting.txt --json
+    python3 tools/cv_suggest.py posting.txt --title "Customer Success Manager"
+    python3 tools/cv_suggest.py posting.txt --json
 """
 
 import argparse

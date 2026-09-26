@@ -2,7 +2,7 @@
 
 A Windows Scheduled Task named **"JobSearchV1 Watcher"** runs
 `tools/scheduled_watch.bat` once a day at 08:30, which runs
-`py tools/watch_ats.py --run` and appends its output to `data/watch-log.txt`
+`python3 tools/watch_ats.py --run` and appends its output to `data/watch-log.txt`
 with a timestamp. Set up 2026-09-21, because clicking "Check for new roles"
 by hand was the only way it ever ran.
 

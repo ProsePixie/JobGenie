@@ -1,0 +1,39 @@
+name: Copilot setup steps
+
+# Prepares the environment for GitHub Copilot's coding agent, so it can run the
+# tests and actually render and check a CV instead of guessing.
+on:
+  workflow_dispatch:
+  push:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+  pull_request:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: PDF tools (pdftotext, pdfunite)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Example profile
+        run: test -d profile || cp -r profile.example profile
+      - name: Check the toolchain
+        run: |
+          export CHROME_PATH="$(command -v google-chrome || command -v chromium || true)"
+          echo "CHROME_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
+          echo "CHROME_NO_SANDBOX=1" >> "$GITHUB_ENV"
+          python render/render.py --check
+          python -m unittest discover tests
+      - name: Render and check a CV end to end
+        env:
+          CHROME_NO_SANDBOX: "1"
+        run: |
+          export CHROME_PATH="$(command -v google-chrome || command -v chromium)"
+          python render/render.py --base professional --lead enablement --out /tmp/cv
+          python render/ats_check.py /tmp/cv/cv.pdf

@@ -15,10 +15,10 @@ Setup
     That directory is gitignored.
 
 Usage
-    py tools/warm_path.py "Acme Systems"
-    py tools/warm_path.py "Acme" --min-score 0.5
-    py tools/warm_path.py --list-companies
-    py tools/warm_path.py --file path/to/Connections.csv "Acme"
+    python3 tools/warm_path.py "Acme Systems"
+    python3 tools/warm_path.py "Acme" --min-score 0.5
+    python3 tools/warm_path.py --list-companies
+    python3 tools/warm_path.py --file path/to/Connections.csv "Acme"
 """
 
 import argparse

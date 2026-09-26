@@ -14,11 +14,13 @@ Paths are dotted, and a list is indexed by its entries' `id`:
 
     identity.phone      roles.acme.end      certifications.aws-cp.year
 
-    py tools/careerdata.py get roles.acme.end
-    py tools/careerdata.py set roles.acme.end 2024-01 --source "user, in chat"
-    py tools/careerdata.py add-bullet acme --text "Built ..." --threads enablement \\
+    python3 tools/careerdata.py get roles.acme.end
+    python3 tools/careerdata.py set roles.acme.end 2024-01 --source "user, in chat"
+    python3 tools/careerdata.py add-bullet acme --text "Built ..." --threads enablement \\
         --tags onboarding --strength 3 --source "user, in chat"
-    py tools/careerdata.py history roles.acme
+    python3 tools/careerdata.py add roles '{"id": "acme", "title": "Trainer", "org": "Acme", "start": "2020-03"}' \\
+        --source "user, in setup"
+    python3 tools/careerdata.py history roles.acme
 
 Values given to `set` are read as JSON when they parse (2021, true, ["a"])
 and as plain text otherwise.
@@ -142,6 +144,29 @@ def vet(texts, threads=()):
     return None
 
 
+REQUIRED = {"roles": ("id", "title", "org", "start"), "education": ("id", "degree", "institution"),
+            "certifications": ("id", "name"), "languages": ("language", "level")}
+
+
+def add_entry(data, list_name, entry):
+    """Append one entry after the same checks the editor applies. None, or the problem."""
+    missing = [k for k in REQUIRED[list_name] if not str(entry.get(k) or "").strip()]
+    if missing:
+        return "missing: %s" % ", ".join(missing)
+    items = data.setdefault(list_name, [])
+    if "id" in entry and any(x.get("id") == entry["id"] for x in items):
+        return "an entry with id %r already exists" % entry["id"]
+    texts = [v for k, v in entry.items() if isinstance(v, str) and k not in ("id", "start", "end")]
+    problem = vet(texts, [t for t in entry.get("threads") or []])
+    if problem:
+        return problem
+    if list_name == "roles":
+        entry.setdefault("bullets", [])
+        entry.setdefault("end", "present")
+    items.append(entry)
+    return None
+
+
 def parse_value(raw):
     try:
         return json.loads(raw)
@@ -168,6 +193,10 @@ def main(argv=None):
     b.add_argument("--tags", default="")
     b.add_argument("--strength", type=int, default=2, choices=(1, 2, 3))
     b.add_argument("--source", required=True)
+    a = sub.add_parser("add", help="add one entry to roles, education, certifications or languages")
+    a.add_argument("list", choices=["roles", "education", "certifications", "languages"])
+    a.add_argument("entry", help='the entry as JSON, e.g. \'{"id": "acme", "title": "..."}\'')
+    a.add_argument("--source", required=True)
     h = sub.add_parser("history")
     h.add_argument("prefix", nargs="?", default="")
     args = ap.parse_args(argv)
@@ -205,6 +234,13 @@ def main(argv=None):
             set_in(new, args.path, value)
         except (KeyError, TypeError):
             sys.exit("no such place to write: %s (lists are indexed by entry id)" % args.path)
+    elif args.command == "add":
+        entry = parse_value(args.entry)
+        if not isinstance(entry, dict):
+            sys.exit("entry must be a JSON object")
+        problem = add_entry(new, args.list, entry)
+        if problem:
+            sys.exit(problem)
     else:
         try:
             role = get(new, "roles." + args.role)

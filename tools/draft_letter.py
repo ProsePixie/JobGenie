@@ -28,8 +28,8 @@ Safety, in order:
 Requires the Claude Code CLI to be installed and logged in (`claude`, once,
 interactively - this script cannot do that part for you).
 
-    py tools/draft_letter.py --slug acme-role --company Acme
-    py tools/draft_letter.py --slug acme-role --company Acme --dry-run
+    python3 tools/draft_letter.py --slug acme-role --company Acme
+    python3 tools/draft_letter.py --slug acme-role --company Acme --dry-run
 """
 
 import argparse

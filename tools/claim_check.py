@@ -19,9 +19,9 @@ Two kinds of finding.
 
 Standard library only.
 
-    py tools/claim_check.py applications/acme/letter.md --company Acme
-    py tools/claim_check.py applications/acme/letter.md --company Acme --json
-    py tools/claim_check.py -  --company Acme          reads stdin
+    python3 tools/claim_check.py applications/acme/letter.md --company Acme
+    python3 tools/claim_check.py applications/acme/letter.md --company Acme --json
+    python3 tools/claim_check.py -  --company Acme          reads stdin
 """
 
 import argparse

@@ -35,7 +35,7 @@ Silence is not permission; it becomes a question for first contact.
 ## Step 1b — Prescreen, before any reasoning
 
 ```bash
-py tools/prescreen.py <posting.txt> --title "<advertised title>"
+python3 tools/prescreen.py <posting.txt> --title "<advertised title>"
 ```
 
 It runs the mechanical checks: hard gates, the people-to-systems signal ratio, the title
@@ -60,7 +60,7 @@ informs judgement; it does not replace it.
 ## Step 2 — Base and threads
 
 ```bash
-py tools/cv_suggest.py <posting.txt> --title "<advertised title>"
+python3 tools/cv_suggest.py <posting.txt> --title "<advertised title>"
 ```
 
 Report the suggested base (Professional or Service Industry), the Lead thread and any

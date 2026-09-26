@@ -25,8 +25,8 @@ PDFs and other binary files there are not parsed; list anything in them
 that must not leak in leak-terms.txt.
 
 Usage
-    py tools/leak_check.py                         scan applications/, build/, data/, profile/
-    py tools/leak_check.py applications/acme       scan one package
+    python3 tools/leak_check.py                         scan applications/, build/, data/, profile/
+    python3 tools/leak_check.py applications/acme       scan one package
 
 Exit status 1 when anything is found.
 """
