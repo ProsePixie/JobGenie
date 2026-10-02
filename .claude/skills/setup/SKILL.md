@@ -43,9 +43,10 @@ Build the user's profile from their own CV, **one confirmed fact at a time**.
    (same for `identity.email`, `identity.phone`, `identity.city`, `identity.location`,
    `identity.work_authorization`, `identity.links.linkedin`).
 
-5. **Roles, newest first.** For each: propose title, organisation, dates (`YYYY-MM`),
-   location and `org_type` (`enterprise`, `startup`, `public`, or `independent` /
-   `product` for projects). After confirmation:
+5. **Roles, newest first.** Employment only — a personal or side project goes in step 8
+   instead, never here as a fake "role". For each: propose title, organisation, dates
+   (`YYYY-MM`), location and `org_type` (`enterprise`, `startup`, `public`, or
+   `independent` for freelance/contract work). After confirmation:
    `python3 tools/careerdata.py add roles '{"id":"acme","title":"...","org":"...","org_type":"enterprise","start":"2020-03","end":"present","location":"..."}' --source "user, in setup"`
 
 6. **Threads before bullets.** From the confirmed roles, propose 3-5 threads (the user's
@@ -62,32 +63,58 @@ Build the user's profile from their own CV, **one confirmed fact at a time**.
    A bullet needs at least one thread, or it never renders. Strength: 3 for the best
    evidence, 2 normal, 1 minor.
 
-8. **Education, certifications, languages** (honest levels: "Fluent spoken", not
+8. **Projects.** Anything built — personal, side, open source, a product shipped
+   independently of an employer — goes here, in `career.json`'s own `projects` array,
+   never as a fake "role". Propose name, a one-line pitch, dates and whether it's current
+   or finished:
+   `python3 tools/careerdata.py add projects '{"id":"study-buddy","name":"Study Buddy","pitch":"a flashcard web app that turns course notes into spaced-repetition decks","start":"2025-06","end":"present"}' --source "user, in setup"`
+   then its bullets the same way as a role's:
+   `python3 tools/careerdata.py add-bullet study-buddy --text "..." --threads ai --tags python --strength 3 --source "user, in setup"`
+   If a project is also worth showing as a live link, register it in `profile/evidence.json`
+   too (see `.claude/skills/evidence`) — reuse the same `id` so the two stay paired.
+
+9. **Education, certifications, languages** (honest levels: "Fluent spoken", not
    "Fluent" when writing is weaker):
    `python3 tools/careerdata.py add education '{"id":"...","degree":"...","institution":"...","end":"2015"}' --source "user, in setup"`
    `python3 tools/careerdata.py add certifications '{"id":"...","name":"...","issuer":"...","year":"2021","threads":["enablement"]}' --source "user, in setup"`
    `python3 tools/careerdata.py add languages '{"language":"English","level":"Native"}' --source "user, in setup"`
 
-9. **Skills.** Propose clusters (label, items, threads) and write each:
-   `python3 tools/careerdata.py set skills.enablement '{"label":"Education & Enablement","items":["..."],"threads":["enablement"]}' --source "user, in setup"`
+10. **Skills.** Propose clusters (label, items, threads) and write each:
+    `python3 tools/careerdata.py set skills.enablement '{"label":"Education & Enablement","items":["..."],"threads":["enablement"]}' --source "user, in setup"`
 
-10. **Where they can work.** Ask, then write `profile/market.json` (shape in
+11. **Voice.** Ask spelling preference (American / British / other English) and date-order
+    preference (month-first or day-first in prose and letters), then fill in the two TODOs
+    at the top of `profile/writing-style.md` directly with the confirmed answers — it is
+    the user's own preference, not a fact `careerdata.py` tracks, same treatment as
+    `threads.json`.
+
+12. **Notes.** Ask if there's anything else that doesn't fit the structured fields above —
+    side interests, context on a gap, an unusual combination of skills, why they're looking.
+    Write it into `profile/notes.md` as free text. This is background for reasoning about
+    fit and positioning, **never** a source for a CV, letter or form-answer line (hard rule
+    2 still applies: a claim needs a `career.json`/`evidence.json`/confirmed-in-chat trace,
+    and notes is none of those).
+
+13. **Where they can work.** Ask, then write `profile/market.json` (shape in
     `profile.example/market.json`): `home_places` (town, region), `home_countries`,
     `wide_regions` that include home (e.g. "north america", "emea"), `us_home`,
-    `cv_languages` (["en"], or ["en","de"] for the German market pack), and
-    `language_gates` for a language held only partly. Then commute radius, remote
-    preference and pay floor in `profile/availability.json`.
+    `cv_languages` (["en"], or ["en","de"] only if the user actually wants the optional
+    German output pack — see `docs/HOW-IT-WORKS.md`), and `language_gates` for a language
+    held only partly. This is also what drives every hard gate in `/fit` and
+    `tools/prescreen.py` — there is nothing else to configure for them. Then commute
+    radius, remote preference and pay floor in `profile/availability.json`.
 
-11. **Private tier.** Tell the user that `profile/private/leak-terms.txt` exists and what
+14. **Private tier.** Tell the user that `profile/private/leak-terms.txt` exists and what
     it is for (one term per line that must never appear in a sent document, such as a
     former salary or a reference's name). **They type it themselves; you never open it.**
 
-12. **Check.** Run `python3 tools/doctor.py` (should say Ready) and
+15. **Check.** Run `python3 tools/doctor.py` (should say Ready) and
     `python3 render/render.py --check`. Build one CV per thread the user cares about:
     `python3 render/render.py --base professional --lead <thread> --out build/check-<thread>`
     and run `python3 render/ats_check.py build/check-<thread>/cv.pdf`. Report any
     thread with too few bullets plainly: that is a gap to fill with real facts, not to
     paper over.
 
-13. **Hand over.** `python3 web/server.py` opens the app. Point them to the Pipeline tab
+16. **Hand over.** `python3 web/server.py` opens the app. Point them to the Overview tab
+    (per-thread strength and gaps, computed from everything above), the Pipeline tab
     (add a job, see its score, Build CV) and the Log tab.

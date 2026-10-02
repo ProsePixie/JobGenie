@@ -4,10 +4,13 @@
     python3 tools/new_profile.py
 
 Writes profile/ from profile.example/ with every fact cleared to TODO or empty:
-no roles, education, certifications, skills or evidence; identity fields TODO;
-market.json with no home set. threads.json keeps the example threads as a
-starting point for /setup to replace. Creates profile/private/ with an empty
-leak-terms.txt. Refuses if profile/ already exists: it never overwrites data.
+no roles, projects, education, certifications, skills or evidence; identity
+fields TODO; market.json with no home set. threads.json keeps the example
+threads as a starting point for /setup to replace. notes.md, evaluation.md and
+writing-style.md are copied as-is: they are instructional/TODO content, not
+personal data, and /setup fills in their remaining TODOs (voice preferences)
+directly. Creates profile/private/ with an empty leak-terms.txt. Refuses if
+profile/ already exists: it never overwrites data.
 """
 
 import json
@@ -26,7 +29,7 @@ def blank_career(example):
     ident["links"] = {"linkedin": "TODO"}
     return {"_doc": "Your career data. Filled by /setup, one confirmed fact at a time; edit "
                     "with tools/careerdata.py or the Career data tab, never by hand.",
-            "identity": ident, "roles": [], "education": [], "certifications": [],
+            "identity": ident, "roles": [], "projects": [], "education": [], "certifications": [],
             "skills": {}, "languages": []}
 
 

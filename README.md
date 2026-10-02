@@ -32,6 +32,20 @@ cannot survive. JobGenie is built the other way round:
 4. **Private stays private.** `profile/private/` (salary history, references) never enters
    a prompt. A leak check scans every package before it can be sent.
 
+## Who this is for
+
+Built for people in the EU or the Americas applying to roles in English. Output - CV,
+letter, form answers - always stays in the language(s) you set in `profile/market.json`
+(English by default); JobGenie does not translate your CV into the employer's language,
+and does not assume you need it to.
+
+If you run into a posting in a language you don't read, you have two options: ask your
+own Claude Code session to translate it before you run `/fit` on the result, or use the
+"Translate to English" button on the app's Screen tab, which screens the original text
+for anything addressed to an AI before translating it (see `CLAUDE.md` hard rule 3).
+Either way, nothing here was built to localize your *application* - only to help you
+read a posting that isn't in your language before deciding what to do about it.
+
 ## What it does
 
 | | |
@@ -100,7 +114,8 @@ web/server.py: local UI over all of it (127.0.0.1 only, stdlib only)
 - PDFs need Chrome or Edge and poppler.
 - The score matches words, not meaning: it is reliable for spotting gaps and what a CV
   leaves out, less so on short or generic postings. Every line of it is shown so you can judge.
-- CVs in English and German today.
+- Output is in English (or whichever languages you set in `cv_languages`) - see "Who this
+  is for" above. A second output language is possible; German is the worked example.
 
 ## License
 

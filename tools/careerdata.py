@@ -20,6 +20,8 @@ Paths are dotted, and a list is indexed by its entries' `id`:
         --tags onboarding --strength 3 --source "user, in chat"
     python3 tools/careerdata.py add roles '{"id": "acme", "title": "Trainer", "org": "Acme", "start": "2020-03"}' \\
         --source "user, in setup"
+    python3 tools/careerdata.py add projects '{"id": "study-buddy", "name": "Study Buddy", "start": "2025-06"}' \\
+        --source "user, in setup"
     python3 tools/careerdata.py history roles.acme
 
 Values given to `set` are read as JSON when they parse (2021, true, ["a"])
@@ -144,7 +146,8 @@ def vet(texts, threads=()):
     return None
 
 
-REQUIRED = {"roles": ("id", "title", "org", "start"), "education": ("id", "degree", "institution"),
+REQUIRED = {"roles": ("id", "title", "org", "start"), "projects": ("id", "name", "start"),
+            "education": ("id", "degree", "institution"),
             "certifications": ("id", "name"), "languages": ("language", "level")}
 
 
@@ -160,7 +163,7 @@ def add_entry(data, list_name, entry):
     problem = vet(texts, [t for t in entry.get("threads") or []])
     if problem:
         return problem
-    if list_name == "roles":
+    if list_name in ("roles", "projects"):
         entry.setdefault("bullets", [])
         entry.setdefault("end", "present")
     items.append(entry)
@@ -185,16 +188,17 @@ def main(argv=None):
     s.add_argument("path")
     s.add_argument("value")
     s.add_argument("--source", required=True, help='e.g. "user, in chat"')
-    b = sub.add_parser("add-bullet")
-    b.add_argument("role")
+    b = sub.add_parser("add-bullet", help="add a bullet to a role or a project (tried in that order)")
+    b.add_argument("role", help="a roles.<id> or projects.<id> entry's id")
     b.add_argument("--text", required=True)
     b.add_argument("--text-de", default="")
     b.add_argument("--threads", default="", help="comma-separated thread ids")
     b.add_argument("--tags", default="")
     b.add_argument("--strength", type=int, default=2, choices=(1, 2, 3))
     b.add_argument("--source", required=True)
-    a = sub.add_parser("add", help="add one entry to roles, education, certifications or languages")
-    a.add_argument("list", choices=["roles", "education", "certifications", "languages"])
+    a = sub.add_parser("add", help="add one entry to roles, projects, education, "
+                                   "certifications or languages")
+    a.add_argument("list", choices=["roles", "projects", "education", "certifications", "languages"])
     a.add_argument("entry", help='the entry as JSON, e.g. \'{"id": "acme", "title": "..."}\'')
     a.add_argument("--source", required=True)
     h = sub.add_parser("history")
@@ -245,7 +249,10 @@ def main(argv=None):
         try:
             role = get(new, "roles." + args.role)
         except KeyError:
-            sys.exit("no role %r" % args.role)
+            try:
+                role = get(new, "projects." + args.role)
+            except KeyError:
+                sys.exit("no role or project %r" % args.role)
         threads = split(args.threads)
         if not threads:
             sys.exit("--threads is required: a bullet no thread claims never renders")

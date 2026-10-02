@@ -125,6 +125,29 @@ watcher, the screen and the CV builder read it, so the same classifier rejects
 "Munich, Germany" for a user in Toronto and accepts it for one in Berlin. A US state code
 outranks a European town name, because Berlin, NH is not Berlin.
 
+## 8b. Adding a second CV output language
+
+JobGenie's default audience applies in English: EU and Americas users, output always in
+`profile/market.json`'s `cv_languages`. A posting in another language is read and
+understood in that language (translate it in conversation, or with the Screen tab's
+"Translate to English" button — see hard rule 3 in `CLAUDE.md`), never written back to
+in it, unless the user explicitly wants a second output language for their own CV.
+
+The repository still carries a full worked example of doing that: a German CV output
+pack (`render/render.py`, `render/cv_builder.py`, `render/letter.py`,
+`render/ats_check.py`, each with a handful of `if lang == "de":` branches; reviewed
+`text_de`/`headline_de`/`name_de`/`pitch_de` fields alongside the English ones in
+`career.json`; `profile/de-glossary.json` for protected-title and translation rules). It
+is already gated behind `cv_languages` — `tools/new_profile.py` defaults a new profile to
+`["en"]` only, so none of it runs or is offered to an English-only user. It stays in the
+codebase as a pattern to copy, not a second feature to maintain: a translation generated
+fresh on every render would not be reviewable, which is why the German pack stores
+reviewed text in `career.json` rather than translating at render time (hard rule 2 — see
+`de-glossary.json`'s own `_doc`). Anyone wanting a third output language should follow
+the same shape: reviewed `_<lang>` fields in `career.json`, a glossary file for terms
+that carry legal or credential weight in that language, and `lang == "<code>"` branches
+in the same four files, gated behind adding that code to `cv_languages`.
+
 ## 9. Built to be operated by AI, safely
 
 The repository is also a set of instructions: `CLAUDE.md` for Claude Code, and
@@ -139,6 +162,7 @@ comments explain the failure that made a rule necessary.
 - The AI steps (letter drafting, fit analysis, `/setup`) need Claude Code. Building,
   checking, scoring and packaging do not.
 - The score matches words, not meaning.
-- CVs in English and German today.
+- Built for EU and Americas users applying in English. A second output language (German
+  is the worked example) is possible but opt-in, never assumed.
 - Broad job search depends on each company's applicant-tracking system being reachable;
   national job boards beyond Germany's are not yet supported.
