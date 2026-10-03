@@ -293,15 +293,11 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
         return chosen
 
     roles = sorted(career.get("roles", []), key=R.sort_key, reverse=True)
-    jobs, projects, earlier = [], [], []
-    for role in roles:
-        if role.get("org_type") in R.PROJECT_ORG_TYPES:
-            if role.get("project_tier") == "earlier":
-                earlier.append(role)
-            else:
-                projects.append(role)
-        else:
-            jobs.append({"role": role, "bullets": choose(role)})
+    jobs = [{"role": role, "bullets": choose(role)} for role in roles]
+    proj_entries = sorted(career.get("projects", []), key=R.sort_key, reverse=True)
+    projects, earlier = [], []
+    for proj in proj_entries:
+        (earlier if proj.get("project_tier") == "earlier" else projects).append(proj)
 
     project_cap = caps.get("projects", base_def.get("max_projects", 0))
     shown_projects = []
@@ -333,7 +329,7 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
 
     earlier_line = None
     if earlier and spec["dials"].get("ai", "off") != "off" and project_cap:
-        names = [r.get("org") or r.get("title") for r in sorted(earlier, key=R.sort_key)]
+        names = [r.get("name") for r in sorted(earlier, key=R.sort_key)]
         years = sorted({(r.get("start") or "")[:4] for r in earlier if r.get("start")})
         earlier_line = {"names": names, "years": years}
 
@@ -451,18 +447,17 @@ def header_html(spec, ctx, omissions):
 def project_html(role, bullets, lang, omissions):
     """A project as one line saying what it is, then the proof.
 
-    Laid out like a job ("Creator, Study Buddy (personal project)",
-    "Germany") a project spent two lines on a title that says nothing and a
-    location that is not the point, and never said what the thing does. A
-    project with a `pitch` (and `name`) in the CV's language gets
-    "Name - pitch" instead; one without keeps the job layout.
+    A project entry is never laid out like a job: there is no employer and a
+    location is not the point. With a `pitch` in the CV's language it reads
+    "Name - pitch"; without one (or with a TODO pitch) it is just the name.
     """
     de = lang == "de"
     pitch = (role.get("pitch_de") if de else role.get("pitch")) or ""
     name = (de and role.get("name_de")) or role.get("name") or ""
-    if not pitch.strip() or not name.strip() or R.is_todo(pitch):
-        return entry_html(role, bullets, lang, omissions)
-    title = '%s<span class="entry-org"> - %s</span>' % (R.e(name), R.e(pitch.strip()))
+    if pitch.strip() and not R.is_todo(pitch):
+        title = '%s<span class="entry-org"> - %s</span>' % (R.e(name), R.e(pitch.strip()))
+    else:
+        title = R.e(name)
     out = ['<div class="entry project">', '  <div class="entry-head">',
            '    <p class="entry-title">%s</p>' % title,
            '    <p class="entry-meta">%s</p>' % R.date_range(role, lang), '  </div>']

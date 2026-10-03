@@ -2,23 +2,23 @@
 
 Rules for every generated CV, letter, form answer, and outreach message.
 
-## Spelling: American English, always
+## Spelling and date format
 
-The candidate is a native American English speaker and does not write British English.
-Use American spellings in every document, every profile file, and every draft:
+TODO — confirmed in `/setup`, not guessed. Two settings, each consistent across every
+document, every profile file, and every draft once set:
 
+**Spelling: TODO (American / British / other).** Pick one and hold it everywhere, even
+when writing to an employer whose own convention differs — it is the candidate's voice,
+not a regional convention matched to the reader. American English example spellings:
 organization, program, standardize, localization, behavior, skeptical, recognize,
 analyze, center, specialize, catalog, license, fiber, judgment, canceled, modeling.
+British equivalents: organisation, programme, standardise, localisation, behaviour,
+sceptical, and so on. Whichever is confirmed, never mix the two within one document.
 
-Not: organisation, programme, standardise, localisation, behaviour, sceptical.
-
-This applies even when writing to a UK or European employer. It is their voice, not a
-regional convention to be matched to the reader.
-
-**One exception: dates are European order, day, month, year.** Stated by the user on
-2026-09-24. Write "24 September 2026", never "September 24, 2026". Spell the month out
-in prose and letters so the date cannot be misread as the US order; in the CV the
-existing "Sep 2026" month-year form stays as it is.
+**Date order: TODO (month-first, e.g. "September 24, 2026" / day-first, e.g.
+"24 September 2026").** Spell the month out in prose and letters so the date cannot be
+misread between conventions; in the CV the existing "Sep 2026" month-year form stays as
+it is regardless of which order is chosen.
 
 ## Voice
 
@@ -116,9 +116,9 @@ more scope than any single one had? Split it or drop it.
 
 ## Language
 
-English by default, including for German employers, because the target is English-first
-international companies.
-
-Write in German only when the posting is in German **and** the user confirms it for that
-application. When writing German, it is still an English-market CV in German words: no
-photo, no personal data, no Lebenslauf table conventions.
+English always, listed in `market.json`'s `cv_languages`, regardless of the employer's
+own language or country. A posting in another language is read and understood in that
+language — translate it to decide fit, never to write to it, unless the user explicitly
+confirms a different output language for that one application and `cv_languages` lists
+it. Adding a second CV output language is possible (see `docs/HOW-IT-WORKS.md` for how
+the optional German pack was built, as a worked example) but is never assumed.
