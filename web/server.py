@@ -205,7 +205,8 @@ def run(cmd, stdin_text=None, timeout=None):
         proc = subprocess.run(
             cmd, cwd=str(ROOT), capture_output=True, text=True, env=env,
             encoding="utf-8", errors="replace", input=stdin_text,
-            timeout=effective_timeout)
+            timeout=effective_timeout,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0)
         res = {"ok": proc.returncode == 0, "code": proc.returncode,
                "out": proc.stdout or "", "err": proc.stderr or ""}
     except subprocess.TimeoutExpired:
@@ -997,6 +998,15 @@ def api_pipeline_report_wrong(body):
 # API
 # --------------------------------------------------------------------------
 
+def api_claude_auth():
+    """Whether the Claude sign-in the AI features use is still alive."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import claude_run  # noqa: E402
+    ok, note = claude_run.logged_in()
+    return {"ok": True, "logged_in": ok,
+            "message": claude_run.SIGN_IN_AGAIN if ok is False else note}
+
+
 def api_status():
     career = load_json(PROFILE / "career.json")
     apps = load_jsonl(DATA / "applications.jsonl")
@@ -1581,6 +1591,18 @@ def api_package(body):
     sys.path.insert(0, str(ROOT / "tools"))
     import package  # noqa: E402
     written, problems, warnings = package.build(slug, merge=bool(body.get("merge")))
+    # A CV that was never finalized is built here instead of sending him back
+    # to find the button (2026-10-19: "no CV PDF in the folder").
+    saved_spec = load_json(APPS / slug / "build.json", None)
+    if saved_spec and any("no CV PDF" in p for p in problems):
+        entry = next((e for e in load_pipeline() if app_dir(e["id"]).name == slug), None)
+        if entry:
+            fin = api_build_finalize({"id": entry["id"], "spec": saved_spec})
+            if not fin.get("ok"):
+                why = "; ".join(fin.get("problems") or []) or (fin.get("ats") or "see the Build panel")[:300]
+                return {"ok": False, "warnings": warnings,
+                        "problems": ["The CV had not been built yet, and building it failed: %s" % why]}
+            written, problems, warnings = package.build(slug, merge=bool(body.get("merge")))
     if not problems:
         with PIPELINE_LOCK:
             entries = load_pipeline()
@@ -2740,6 +2762,7 @@ def api_build_letter(body):
 
 ROUTES_GET = {
     "/api/status": api_status,
+    "/api/claude-auth": api_claude_auth,
     "/api/watchlist": api_watchlist,
     "/api/career": api_career,
     "/api/pipeline": api_pipeline,

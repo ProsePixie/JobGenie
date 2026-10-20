@@ -12,6 +12,7 @@ These tasks need no tools at all: every fact they may use is in the prompt.
 
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -29,6 +30,42 @@ ROOT = Path(__file__).resolve().parent.parent
 SAFE_ARGS = ["--restricted", "--strict-mcp-config", "--output-format", "json",
              "--disallowedTools", "Edit", "Write", "NotebookEdit", "WebFetch",
              "WebSearch", "Read(./profile/private/**)"]
+
+
+# The app runs without a console (pythonw). Every program it starts would open its
+# own console window; the sign-in check did, on every window focus, and each new
+# window took focus, which triggered the next check: command prompts opened
+# without end (2026-10-20). A hidden console is inherited by everything below it.
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+
+SIGN_IN_AGAIN = ("Your Claude sign-in has expired. Open a terminal, run claude, type /login, "
+                 "finish signing in in the browser, then try again.")
+_AUTH_RE = re.compile(r"failed to authenticate|oauth|not logged in|please run /login|"
+                      r"session expired|invalid api key|authentication", re.I)
+
+
+def explain(text):
+    """Plain words for the one failure the user can fix himself. The raw
+    message ("Failed to authenticate: OAuth session expired and could not be
+    refreshed") was all the app showed when summaries and letters stopped
+    working (2026-10-19)."""
+    return SIGN_IN_AGAIN if _AUTH_RE.search(text or "") else text
+
+
+def logged_in():
+    """(True, False or None, note). None when it cannot be told. `claude auth
+    status` reads the local login and costs no request, so the app can check
+    before he clicks something that will fail."""
+    claude = find_claude()
+    if not claude:
+        return None, "claude CLI not found"
+    try:
+        proc = subprocess.run([claude, "auth", "status", "--json"], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=20,
+                              creationflags=NO_WINDOW)
+        return bool(json.loads(proc.stdout).get("loggedIn")), ""
+    except (subprocess.TimeoutExpired, ValueError, OSError):
+        return None, "could not check the sign-in"
 
 
 def find_claude():
@@ -52,13 +89,14 @@ def ask(prompt, timeout=240):
     cmd = [claude, "-p"] + SAFE_ARGS
     try:
         proc = subprocess.run(cmd, cwd=str(ROOT), input=prompt, capture_output=True,
-                              text=True, encoding="utf-8", errors="replace", timeout=timeout)
+                              text=True, encoding="utf-8", errors="replace", timeout=timeout,
+                              creationflags=NO_WINDOW)
     except subprocess.TimeoutExpired:
         return False, "the AI request did not finish within %d seconds" % timeout
     try:
         payload = json.loads(proc.stdout)
     except ValueError:
-        return False, (proc.stderr or proc.stdout or "no output").strip()[:400]
+        return False, explain((proc.stderr or proc.stdout or "no output").strip()[:400])
     if proc.returncode != 0 or payload.get("is_error"):
-        return False, str(payload.get("result") or proc.stderr or "request failed")[:400]
+        return False, explain(str(payload.get("result") or proc.stderr or "request failed")[:400])
     return True, str(payload.get("result") or "").strip()

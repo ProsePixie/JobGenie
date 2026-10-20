@@ -213,8 +213,13 @@ def main():
         summary = result.stdout.strip()
 
     if result.returncode != 0 or is_error:
+        from claude_run import explain  # noqa: E402
+        detail = summary or result.stderr.strip() or "no output from the claude CLI"
+        if explain(detail) != detail:
+            print("fit analysis FAILED: %s" % explain(detail))
+            return 1
         print("fit analysis FAILED (exit %d)" % result.returncode)
-        print(summary or result.stderr.strip() or "no output from the claude CLI")
+        print(detail)
         return 1
 
     try:
