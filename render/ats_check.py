@@ -254,17 +254,18 @@ def check_substance(text, pdf_path, findings):
     """
     from render import (  # noqa: E402
         LAST_PAGE_MIN_SHARE, MIN_BULLETS, MIN_CHARS_PER_PAGE, MIN_SKILLS,
-        PROJECT_ORG_TYPES, last_page_share, substance,
+        last_page_share, substance,
     )
     flat = " ".join(text.split())
 
-    # Every job in career.json appears, by employer name. Side projects are
-    # the dials' choice; the employment chronology is not.
+    # Every job in career.json appears, by employer name. Projects are the
+    # dials' choice (they live in career.json's separate "projects" array);
+    # the employment chronology in "roles" is not.
     if CAREER.exists():
         roles = json.loads(CAREER.read_text(encoding="utf-8")).get("roles", [])
         # Either spelling counts: a German CV prints org_de where one exists.
         missing = [r.get("org", r.get("id")) for r in roles
-                   if r.get("org_type") not in PROJECT_ORG_TYPES and r.get("org")
+                   if r.get("org")
                    and not r.get("only_base")        # optional by definition: one base's CV only
                    and not any(" ".join(n.split()) in flat
                                for n in (r["org"], r.get("org_de") or "") if n)]

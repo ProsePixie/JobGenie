@@ -7,26 +7,29 @@ should not be written.
 
 Any FAIL ends the evaluation. Do not score, do not draft.
 
+Work authorization, relocation and language are **computed mechanically** by
+`tools/prescreen.py` from `profile/market.json` (`home_places`, `home_countries`,
+`wide_regions`, `us_home`, `language_gates`) — run it before reasoning about a posting,
+and treat its `gates_triggered` output as authoritative, not this file. Nothing here
+duplicates that logic or hardcodes a country or language: `market.json` is the single
+place that changes when the user's situation does.
+
+A gate this file *does* own, because it isn't a location/language fact:
+
 | Gate | FAIL when |
 |---|---|
-| **Work authorization** | Posting requires citizenship, security clearance, or a residency status not held |
-| **Language** | German is the primary working language of the role, **or** the role requires professional written German produced unaided |
-| **Location** | Requires relocation outside Germany, or onsite attendance incompatible with the stated arrangement |
 | **Compensation** | A stated band whose upper bound is below the public target in `career.json` |
 | **Legitimacy** | Unnamed employer, upfront payment, personal-email contact, or a request for identity documents before an interview |
 
 Silence is not permission. A posting that says nothing about visa sponsorship has not
 offered it. Proceed, but flag it as a question for first contact rather than assuming.
 
-German as an *additional* requirement passes the language gate. German as the working
-language of the team fails it — that is a preference about the kind of company, not a
-capability limit.
-
-Written German is a genuine limit and the distinction matters. Spoken German is fluent
-and enablement has been delivered in it, so DACH-facing delivery, workshops, and
-customer sessions all pass. Producing polished written German unaided does not, and a
-role whose core output is German copy, documentation, or course material fails the gate
-rather than being bluffed through.
+A language the user holds only partly (`language_gates` in `market.json`, e.g. "fluent
+spoken, not professional written") is a genuine, specific limit, not a blanket pass or
+fail: a posting that needs that language only for stakeholder conversations can clear
+the gate even where one that needs polished unaided written output in it cannot. State
+the actual distinction for the language and posting in front of you, from
+`market.json`'s own gate note — never assume a limit the user hasn't recorded there.
 
 ## Stage 2 — Base and Lead thread
 
@@ -62,20 +65,16 @@ Score = (Affinity × 0.20) + (Capability × 0.20) + (Environment × 0.20) + (Evi
 
 ## Stage 3b — Bridge-job scoring (Service base)
 
-Use this instead of Stage 3 whenever Stage 2 picks the Service base with `svc-technical`
-or `svc-retail` as Lead.
+Use this instead of Stage 3 whenever Stage 2 picks the Service base with a thread the
+user treats as income-now rather than a career step — a bridge, not a destination. There
+is no fixed list of which thread ids this applies to: if a `threads.json` service-base
+thread's own `description` frames it this way, apply this stage to it.
 
-These two threads exist for one reason: income now, explicitly not a career step (see
-the `comp_note` of `service-local` and `basic-service` in `archive/personas.json` - "a bridge, not a destination"). Scoring them
-against Evidence and Career alignment measures the wrong thing and does real damage: a
-genuinely good local match structurally can't clear either dimension (there is no
-portfolio artifact for stocking shelves, and it is not supposed to build toward anything),
-which drags a strong fit down into the "skip" band at exactly the moment
-`availability.json`'s own urgency note says income matters most. Added 2026-09-24 after
-this was confirmed with real numbers: a strong match (Affinity 65, Capability 90,
-Environment 70, Persona 90) scored roughly 57 under Stage 3 - inside "apply only with a
-warm path" - purely because Evidence and Career alignment scored near zero for reasons
-that have nothing to do with whether the job is a good bridge.
+Scoring a bridge thread against Evidence and Career alignment measures the wrong thing
+and does real damage: a genuinely good local match structurally can't clear either
+dimension (there is rarely a portfolio artifact for this kind of work, and it is not
+supposed to build toward anything), which drags a strong fit down into the "skip" band
+at exactly the moment `availability.json`'s own urgency note says income matters most.
 
 Same total weight, same 0-100 scale, same verdict bands in Stage 4. Affinity, Capability,
 Environment and Lead clarity keep their exact Stage 3 definitions and weights (20%,
@@ -84,7 +83,7 @@ Environment and Lead clarity keep their exact Stage 3 definitions and weights (2
 | Dimension | Weight | 80–100 | 55–79 | 30–54 | 0–29 |
 |---|---|---|---|---|---|
 | **Immediacy** | 15% | Hiring now, reachable within the stated commute/hours, no long process | Likely soon, minor friction | Unclear timeline or a real scheduling conflict | Not actually available now |
-| **Honest reachability** | 15% | Every requirement has an honest match or a stated, closeable gap (see `gap_honesty` in `archive/personas.json`) | One requirement is a real, open gap | Several open gaps, or one that cannot honestly be bridged | Requires a credential or experience they do not have and cannot honestly claim (e.g. §34a Sachkunde for security work) |
+| **Honest reachability** | 15% | Every requirement has an honest match or a stated, closeable gap | One requirement is a real, open gap | Several open gaps, or one that cannot honestly be bridged | Requires a credential or experience they do not have and cannot honestly claim (e.g. a licence the posting requires that the user doesn't hold) |
 
 Score = (Affinity × 0.20) + (Capability × 0.20) + (Environment × 0.20) + (Immediacy × 0.15)
 + (Honest reachability × 0.15) + (Lead × 0.10)
@@ -93,37 +92,34 @@ Score = (Affinity × 0.20) + (Capability × 0.20) + (Environment × 0.20) + (Imm
 lead somewhere" but "does this actually solve the immediate problem." **Honest
 reachability** replaces Evidence: there is no artifact to point to for this tier, so what
 actually matters is whether the application can be built without fabrication or
-overselling - exactly what `service-local`'s and `basic-service`'s own `gap_honesty`
-fields track (in `archive/personas.json`). Read them before scoring this dimension rather
-than guessing.
+overselling. If a thread's own notes in `threads.json` record which requirements are
+honest, closeable gaps versus ones that can't be bridged, read those before scoring this
+dimension rather than guessing.
 
 ### Affinity, and why it outweighs Lead clarity
 
-Stated directly by the candidate on 2026-07-28:
+TODO — once you have outcome data (`/outcome` on a few closed applications), replace
+this with your own observed pattern: what distinguishes a role you'd choose to talk
+about anyway from one that was merely plausible on paper. Until then, three general
+tests:
 
-> "I am perfectly comfortable being a trainer when it is something I like talking about.
-> Enablement is fun when it is about human connection and stories. Technology is fun when
-> it relates to a problem I need to solve."
+1. **Subject matter.** Is this something the user would choose to talk about anyway?
+2. **Framing.** Is the work framed around people and narrative, or around compliance,
+   governance and metrics (when the user's threads are people-focused) — or around a
+   real problem worth solving versus the technology being the deliverable itself (when
+   they're not)?
+3. **Purpose.** Is the work in service of a problem worth solving, or is the tool or
+   process itself the deliverable?
 
-That is a conditional, not a preference, and it produces three tests:
+Weight it at 20% because, empirically for most people, affinity predicts outcome at
+least as well as capability: a role that's survivable on skill alone can still end badly
+if the subject matter or its framing was never something the candidate wanted. A role
+can also pass affinity while scoring modestly elsewhere and still be the right answer,
+because the person will be good at it on a bad day.
 
-1. **Subject matter.** Is this something they would choose to talk about anyway?
-2. **Framing.** Is the enablement about human connection and narrative, or about
-   compliance, governance and metrics?
-3. **Purpose.** Is the technology in service of a problem worth solving, or is the
-   technology itself the deliverable?
-
-Weight it at 20% because it has better predictive power than capability. Both roles that
-ended badly were affinity failures, not capability failures. One was technology as the
-deliverable — obscure product settings, no problem they held. The other was
-integration plumbing. Neither would have been survivable at any skill level, and both
-would have scored respectably on capability alone.
-
-Conversely, a role can pass affinity while scoring modestly elsewhere and still be the
-right answer, because they will be good at it on a bad day.
-
-`tools/prescreen.py` gives a rough proxy in the people-to-systems orientation ratio, but
-test 1 needs a human read of the subject matter and cannot be automated.
+`tools/prescreen.py` gives a rough proxy in the people-to-systems orientation ratio
+(when the Lead thread's `people_focused` flag is set), but test 1 needs a human read of
+the subject matter and cannot be automated.
 
 **Evidence** is weighted this heavily because it is the one dimension that is *actionable*.
 A low evidence score is not a reason to skip — it is a prompt to ask whether an artifact

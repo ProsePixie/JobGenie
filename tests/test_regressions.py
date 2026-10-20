@@ -377,6 +377,17 @@ class Sessions(unittest.TestCase):
             self.assertNotIn("acceptEdits", source, script)
             self.assertIn("SAFE_ARGS", source, script)
 
+    def test_screen_translate_uses_the_sandboxed_runner(self):
+        # claude_run.ask() always applies SAFE_ARGS internally; a caller only
+        # has to go through it, never shell out to the CLI itself.
+        source = (ROOT / "web" / "server.py").read_text(encoding="utf-8")
+        start = source.index("def api_screen_translate")
+        end = source.index("\ndef ", start + 1)
+        body = source[start:end]
+        self.assertIn("claude_run.ask", body)
+        self.assertIn("screen_posting", body)
+        self.assertNotIn("subprocess", body)
+
 
 class RepositoryData(unittest.TestCase):
     def test_pipeline_log_parses_with_unique_ids(self):
@@ -561,6 +572,7 @@ class SetupTools(unittest.TestCase):
             new_profile.create(ROOT / "profile.example", prof)
             career = json.loads((prof / "career.json").read_text())
             self.assertEqual(career["roles"], [])
+            self.assertEqual(career["projects"], [])
             self.assertEqual(career["identity"]["name"], "TODO")
             self.assertNotIn("Jane", (prof / "career.json").read_text())
             self.assertTrue((prof / "private" / "leak-terms.txt").exists())
@@ -611,6 +623,22 @@ class SetupTools(unittest.TestCase):
             data, "roles", {"id": "acme", "title": "T", "org": "O", "start": "2020"}))
         self.assertIsNone(careerdata.add_entry(
             data, "education", {"id": "ba", "degree": "B.A.", "institution": "State"}))
+
+    def test_careerdata_add_project_defaults_bullets_and_end(self):
+        data = {"projects": []}
+        self.assertIn("missing", careerdata.add_entry(data, "projects", {"id": "sb"}))
+        self.assertIsNone(careerdata.add_entry(
+            data, "projects", {"id": "sb", "name": "Study Buddy", "start": "2025-06"}))
+        proj = data["projects"][0]
+        self.assertEqual(proj["bullets"], [])
+        self.assertEqual(proj["end"], "present")
+
+    def test_careerdata_add_bullet_finds_a_project_too(self):
+        data = {"roles": [], "projects": [{"id": "sb", "name": "Study Buddy", "bullets": []}]}
+        role = careerdata.get(data, "projects.sb")
+        self.assertEqual(role["id"], "sb")
+        with self.assertRaises(KeyError):
+            careerdata.get(data, "roles.sb")
 
     def test_doctor_exit_code_follows_required_items_only(self):
         import doctor

@@ -120,18 +120,16 @@
           "strength": 2
         }
       ]
-    },
+    }
+  ],
+  "projects": [
     {
       "id": "example-project",
-      "title": "Creator",
-      "org": "Study Buddy (personal project)",
-      "org_type": "independent",
-      "start": "2025-06",
-      "end": "present",
-      "location": "Remote",
-      "mode": "independent",
       "name": "Study Buddy",
       "pitch": "a flashcard web app that turns course notes into spaced-repetition decks",
+      "start": "2025-06",
+      "end": "present",
+      "mode": "independent",
       "bullets": [
         {
           "id": "example-project-1",

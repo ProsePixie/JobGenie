@@ -254,6 +254,7 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
   </nav>
   <div class="navgroup-label">Tools</div>
   <nav>
+    <button data-tab="overview" data-title="Overview|Per-thread strength and gaps, computed from your data"><span class="ic">&#128269;</span>Overview</button>
     <button data-tab="dash" data-title="Dashboard|The numbers, at a glance"><span class="ic">&#128202;</span>Dashboard</button>
     <button data-tab="screen" data-title="Screen a posting|Score a posting for fit before committing to it"><span class="ic">&#128221;</span>Screen a posting</button>
     <button data-tab="watch" data-title="Watchlist|Target companies and the reasoning behind each one"><span class="ic">&#11088;</span>Watchlist</button>
@@ -310,6 +311,21 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
   </div>
   <div class="card" id="tEmptyCard" style="display:none">
     <p class="muted">Nothing needs attention right now. <span id="tOpenCount"></span></p>
+  </div>
+</section>
+
+<section id="overview">
+  <div class="card">
+    <h2>Where you stand, by thread</h2>
+    <p class="hint">Computed from career.json, threads.json and evidence.json &mdash;
+      nothing here is edited directly. Strengthen a thin thread with more bullets tagged
+      to it (Career data tab), a registered evidence artifact (<code>/evidence</code>),
+      or by adding a project (<code>/setup</code>).</p>
+    <div id="ovThreads"></div>
+  </div>
+  <div class="card">
+    <h2>Where you're positioned to apply</h2>
+    <div id="ovMarket" class="small"></div>
   </div>
 </section>
 
@@ -416,6 +432,7 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
     <div class="row"><div><label>Posting text</label>
       <textarea id="pbody" placeholder="Paste the full posting body here."></textarea></div></div>
     <button class="go" id="screenBtn">Screen it</button>
+    <button class="alt" id="translateBtn">Translate to English</button>
     <button class="alt" id="toPipe" style="display:none">Add to pipeline</button>
     <span class="muted small" style="margin-left:10px">Mechanical prescreen. Nothing is saved unless you add it.</span>
     <div id="sflash" class="flash" style="margin-top:10px"></div>
@@ -890,6 +907,22 @@ $('#fnSave').onclick = () => {
   a.href = URL.createObjectURL(new Blob(['<?xml version="1.0"?>' + xml], {type: 'image/svg+xml'}));
   a.download = 'application-funnel.svg'; a.click();
 };
+// ---- overview ----
+async function loadOverview(){
+  const o = await get('/api/overview');
+  $('#ovThreads').innerHTML = '<table><tr><th>Thread</th><th>Base</th><th>Bullets</th>'
+    + '<th>Evidence</th><th>Target titles</th><th></th></tr>'
+    + o.threads.map(t => '<tr><td><b>'+esc(t.label)+'</b></td><td class="muted">'+esc(t.base)+'</td><td>'
+      + t.bullets + '</td><td>' + t.evidence + '</td><td class="muted small">'
+      + esc((t.targets||[]).join(', ')) + '</td><td>'
+      + (t.thin ? '<span class="pill warn">thin</span>' : '<span class="pill ok">solid</span>')
+      + '</td></tr>').join('') + '</table>';
+  const m = o.market || {};
+  $('#ovMarket').innerHTML = '<p><b>Home:</b> '
+    + esc([...(m.home_places||[]), ...(m.home_countries||[])].join(', ') || 'not set')
+    + '</p><p><b>Also searching:</b> ' + esc((m.wide_regions||[]).join(', ') || 'none')
+    + '</p><p><b>CV languages:</b> ' + esc((m.cv_languages||[]).join(', ') || 'none') + '</p>';
+}
 
 // ---- dashboard ----
 let STATUS = null;
@@ -934,6 +967,17 @@ $('#screenBtn').onclick = async () => {
   btn.disabled = false; btn.textContent = 'Screen it';
   $('#pcard').style.display=''; $('#pout').textContent = r.prescreen || r.err || 'no output';
   $('#toPipe').style.display = '';
+};
+
+$('#translateBtn').onclick = async () => {
+  const body = $('#pbody').value.trim();
+  if (!body){ flash('#sflash','Paste the posting first.', false); return; }
+  const btn = $('#translateBtn'); btn.disabled = true; btn.textContent = 'Translating...';
+  const r = await post('/api/screen/translate', {body});
+  btn.disabled = false; btn.textContent = 'Translate to English';
+  if (r.ok){ $('#pbody').value = r.text;
+             flash('#sflash','Translated. Review it, then screen it like any other posting.', true); }
+  else flash('#sflash', r.flagged ? r.err : (r.err || 'could not translate'), false);
 };
 
 $('#toPipe').onclick = async () => {
@@ -1748,7 +1792,7 @@ $('#setCoAdd').onclick = async () => {
   else flash('#setCoFlash', r.err || 'could not add', false);
 };
 
-loadStatus(); loadSources(); loadCareer(); loadWatch(); loadSettings();
+loadStatus(); loadSources(); loadCareer(); loadWatch(); loadSettings(); loadOverview();
 async function checkAuth(){
   try {
     const r = await get('/api/claude-auth');

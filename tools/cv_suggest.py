@@ -320,7 +320,8 @@ def requirements(posting, spec, ctx, limit=8):
     shown_skills = {key for _, key, _ in p["skills"]}
     shown_certs = {c.get("id") for c in p["certs"]}
     all_texts = [bl.get("text", "") + " " + (bl.get("text_de") or "")
-                 for role in ctx["career"].get("roles", []) for bl in role.get("bullets", [])]
+                 for role in (ctx["career"].get("roles", []) + ctx["career"].get("projects", []))
+                 for bl in role.get("bullets", [])]
     df_cache = {}
     out = []
     for line in lines:
@@ -382,7 +383,7 @@ def requirements(posting, spec, ctx, limit=8):
                 return sum(weight(w) for w in set(in_data) if covers(w, text))
 
             scored = []
-            for role in ctx["career"].get("roles", []):
+            for role in ctx["career"].get("roles", []) + ctx["career"].get("projects", []):
                 for bl in role.get("bullets", []):
                     if bl["id"] in shown_ids:
                         continue

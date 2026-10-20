@@ -1143,6 +1143,42 @@ def api_status():
     }
 
 
+def api_overview():
+    """Per-thread strength, computed from career.json, threads.json and
+    evidence.json: bullet count, evidence count, target titles, and a thin/solid
+    flag. Read-only - there is nothing to save here, only data to show so a
+    thin thread is visible before a posting exposes it."""
+    career = load_json(PROFILE / "career.json")
+    threads = load_json(PROFILE / "threads.json")
+    evidence = load_json(PROFILE / "evidence.json")
+    market = load_json(PROFILE / "market.json")
+
+    counts = {}
+    for entry in career.get("roles", []) + career.get("projects", []):
+        for b in entry.get("bullets", []):
+            for t in b.get("threads") or []:
+                counts[t] = counts.get(t, 0) + 1
+    ev_counts = {}
+    for artifact in evidence.get("artifacts", []):
+        for t in artifact.get("threads") or []:
+            ev_counts[t] = ev_counts.get(t, 0) + 1
+
+    rows = []
+    for t in threads.get("threads", []):
+        tid = t.get("id")
+        nb, ne = counts.get(tid, 0), ev_counts.get(tid, 0)
+        rows.append({"id": tid, "label": t.get("label", tid), "base": t.get("base", ""),
+                     "targets": t.get("targets", []), "bullets": nb, "evidence": ne,
+                     "thin": nb < 2 or ne == 0})
+    rows.sort(key=lambda r: (r["thin"], -r["bullets"]))
+
+    return {"threads": rows,
+            "market": {"home_places": market.get("home_places", []),
+                       "home_countries": market.get("home_countries", []),
+                       "wide_regions": market.get("wide_regions", []),
+                       "cv_languages": market.get("cv_languages", [])}}
+
+
 def api_watchlist():
     w = load_json(PROFILE / "watchlist.json")
     cats = []
@@ -1724,6 +1760,36 @@ def api_screen(body):
 
     pre = run([PY, "tools/prescreen.py", "-", "--title", title], stdin_text=text)
     return {"ok": pre["ok"], "prescreen": pre["out"] + pre["err"]}
+
+
+def api_screen_translate(body):
+    """Translate a pasted posting to English for the Screen tab, so a posting
+    in another language can be scored and acted on like any other.
+
+    The ORIGINAL pasted text is screened for text addressed to an AI first
+    (hard rule 3, screen_posting - the same screen save_posting runs): a
+    translation never substitutes for that screen, and never runs in its
+    place. Nothing is saved here - the caller decides whether to replace the
+    textarea with the result before running /api/screen or adding it to the
+    pipeline."""
+    text = (body.get("body") or "").strip()
+    if not text:
+        return {"ok": False, "err": "no posting text"}
+    try:
+        text = screen_posting(text)
+    except PostingFlagged as exc:
+        return flagged_reply(str(exc))
+    sys.path.insert(0, str(ROOT / "tools"))
+    import claude_run  # noqa: E402
+    prompt = "\n".join([
+        "Translate the following job posting to English. Return only the",
+        "translated text: no preamble, no commentary, no markdown fencing.",
+        "If it is already in English, return it unchanged.", "",
+        "Posting:", text])
+    ok, answer = claude_run.ask(prompt, timeout=180)
+    if not ok:
+        return {"ok": False, "err": answer}
+    return {"ok": True, "text": answer.strip()}
 
 
 def api_open(body):
@@ -2405,7 +2471,8 @@ def _posting_for(entry):
 
 
 def _bullet_index(career):
-    return {b["id"]: (r, b) for r in career.get("roles", []) for b in r.get("bullets", [])
+    entries = career.get("roles", []) + career.get("projects", [])
+    return {b["id"]: (r, b) for r in entries for b in r.get("bullets", [])
             if b.get("id")}
 
 
@@ -2413,20 +2480,30 @@ def _roles_for_panel(ctx, plan, lang):
     """Every job and project with its bullets, marked as shown or not by the plan."""
     import render as R  # noqa: E402  on sys.path via _builder()
     shown = {b["id"] for g in (plan["jobs"], plan["projects"]) for x in g for b in x["bullets"]}
+    career = ctx["career"]
+
+    def bullets_of(entry):
+        return [{"id": b["id"], "text": b.get("text", ""),
+                 "text_de": b.get("text_de", ""),
+                 "de_stale": bool(b.get("text_de_stale")),
+                 "threads": b.get("threads") or [], "star": bool(b.get("star")),
+                 "shown": b["id"] in shown}
+                for b in entry.get("bullets", [])
+                if b.get("id") and not R.is_todo(b.get("text"))]
+
     out = []
-    for role in sorted(ctx["career"].get("roles", []), key=R.sort_key, reverse=True):
+    for role in sorted(career.get("roles", []), key=R.sort_key, reverse=True):
         out.append({
             "id": role["id"], "title": role.get("title", ""), "org": role.get("org", ""),
-            "dates": R.date_range(role, lang),
-            "project": role.get("org_type") in R.PROJECT_ORG_TYPES,
-            "earlier": role.get("project_tier") == "earlier",
-            "bullets": [{"id": b["id"], "text": b.get("text", ""),
-                         "text_de": b.get("text_de", ""),
-                         "de_stale": bool(b.get("text_de_stale")),
-                         "threads": b.get("threads") or [], "star": bool(b.get("star")),
-                         "shown": b["id"] in shown}
-                        for b in role.get("bullets", [])
-                        if b.get("id") and not R.is_todo(b.get("text"))],
+            "dates": R.date_range(role, lang), "project": False, "earlier": False,
+            "bullets": bullets_of(role),
+        })
+    for proj in sorted(career.get("projects", []), key=R.sort_key, reverse=True):
+        out.append({
+            "id": proj["id"], "title": proj.get("name", ""), "org": "",
+            "dates": R.date_range(proj, lang), "project": True,
+            "earlier": proj.get("project_tier") == "earlier",
+            "bullets": bullets_of(proj),
         })
     return out
 
@@ -2885,6 +2962,7 @@ ROUTES_GET = {
     "/api/status": api_status,
     "/api/funnel": api_funnel,
     "/api/claude-auth": api_claude_auth,
+    "/api/overview": api_overview,
     "/api/watchlist": api_watchlist,
     "/api/career": api_career,
     "/api/pipeline": api_pipeline,
@@ -2902,6 +2980,7 @@ ROUTES_POST = {
     "/api/letter/draft": api_letter_draft,
     "/api/fit/analyze": api_fit_analyze,
     "/api/screen": api_screen,
+    "/api/screen/translate": api_screen_translate,
     "/api/package": api_package,
     "/api/posting/save": api_posting_save,
     "/api/open": api_open,
