@@ -107,6 +107,9 @@ TEACHING_REQ = re.compile(
     r"schulung\w*|unterricht\w*|dozent\w*|lehr\w*)\b", re.I)
 EXPERIENCE_WORD = re.compile(r"\b(experience|erfahrung|background)\b", re.I)
 
+# A word found in more bullets than this says nothing about any one of them.
+COMMON_WORD = 12
+
 PERSONAL = re.compile(
     r"\b(motivat\w*|zuverl(ä|ae|a)ss\w*|reliab\w*|teamplayer|team player|teamf(ä|ae|a)hig\w*|"
     r"begeister\w*|leidenschaft\w*|passion\w*|interesse\b|neugier\w*|curious|curiosity|"
@@ -312,6 +315,12 @@ def requirements(posting, spec, ctx, limit=8):
     # A language the user holds only partly (career.json languages[].gate).
     gated = [x for x in langs if x.get("gate")]
     shown_low, everything_low = shown.lower(), everything.lower()
+    shown_ids = {b["id"] for g in (p["jobs"], p["projects"]) for x in g for b in x["bullets"]}
+    shown_skills = {key for _, key, _ in p["skills"]}
+    shown_certs = {c.get("id") for c in p["certs"]}
+    all_texts = [bl.get("text", "") + " " + (bl.get("text_de") or "")
+                 for role in ctx["career"].get("roles", []) for bl in role.get("bullets", [])]
+    df_cache = {}
     out = []
     for line in lines:
         low = line.lower()
@@ -353,16 +362,59 @@ def requirements(posting, spec, ctx, limit=8):
             status = "available"
         else:
             status = "gap"
-        # Bullets that could cover it, for the one-click add.
-        candidates = []
+        # What could cover it, for the one-click add: bullets ranked by how many
+        # of the line's words they carry (then star, then strength), never one
+        # already on the CV or a second wording of the same fact; skill groups
+        # and certifications the CV does not show, by the same test.
+        candidates, skill_keys, cert_ids = [], [], []
         if status == "available":
+            def weight(w):
+                """A word he uses in few places is evidence; one he uses everywhere
+                ("engagement", "performance") matched half the data and offered
+                bullets that had nothing to do with the line."""
+                if w not in df_cache:
+                    df_cache[w] = sum(1 for t in all_texts if covers(w, t))
+                n = df_cache[w]
+                return 1.0 / n if 0 < n <= COMMON_WORD else 0.0
+
+            def score(text):
+                return sum(weight(w) for w in set(in_data) if covers(w, text))
+
+            scored = []
             for role in ctx["career"].get("roles", []):
-                for b in role.get("bullets", []):
-                    both = b.get("text", "") + " " + (b.get("text_de") or "")
-                    if any(covers(w, both) for w in in_data):
-                        candidates.append(b["id"])
+                for bl in role.get("bullets", []):
+                    if bl["id"] in shown_ids:
+                        continue
+                    sc = score(bl.get("text", "") + " " + (bl.get("text_de") or ""))
+                    if sc > 0:
+                        scored.append((sc, 0.3 * bool(bl.get("star")) + 0.1 * int(bl.get("strength", 2)), bl))
+            best = max((x[0] for x in scored), default=0)
+            scored = [x for x in scored if x[0] >= 0.5 * best]
+            scored.sort(key=lambda x: (-x[0], -x[1]))
+            facts = set()
+            for _, _, bl in scored:
+                fact = bl.get("variant_of") or bl["id"]
+                if fact in facts:
+                    continue
+                facts.add(fact)
+                candidates.append(bl["id"])
+            sk = []
+            for key, cluster in (ctx["career"].get("skills") or {}).items():
+                if key not in shown_skills:
+                    sc = score(" ".join(cluster.get("items", []) + (cluster.get("items_de") or [])))
+                    if sc > 0:
+                        sk.append((sc, key))
+            skill_keys = [k for _, k in sorted(sk, reverse=True)]
+            ce = []
+            for c in ctx["career"].get("certifications", []):
+                if c.get("id") not in shown_certs:
+                    sc = score("%s %s" % (c.get("name", ""), c.get("issuer", "")))
+                    if sc > 0:
+                        ce.append((sc, c["id"]))
+            cert_ids = [k for _, k in sorted(ce, reverse=True)]
         out.append({"text": line, "status": status, "matched": in_cv or in_data,
-                    "bullets": candidates[:3]})
+                    "bullets": candidates[:3], "skills": skill_keys[:2],
+                    "certs": cert_ids[:2]})
     return out
 
 

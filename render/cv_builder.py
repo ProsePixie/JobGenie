@@ -337,6 +337,11 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
         years = sorted({(r.get("start") or "")[:4] for r in earlier if r.get("start")})
         earlier_line = {"names": names, "years": years}
 
+    # A skill group or certification ticked by hand (spec["skills"], spec["certs"],
+    # as the Build panel's Add button writes them) is shown whatever its threads
+    # say and whatever the cap, exactly as a ticked bullet is.
+    pin_skills = {k for k, v in (spec.get("skills") or {}).items() if v is True}
+    pin_certs = {k for k, v in (spec.get("certs") or {}).items() if v is True}
     skills = []
     for key, cluster in (career.get("skills") or {}).items():
         level = level_of(cluster.get("threads"), spec)
@@ -346,6 +351,10 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
     strong = [x for x in skills if x[0] >= LEVEL["strong"]][:4]
     light = [x for x in skills if x[0] == LEVEL["light"]][:1]
     skills = strong + light
+    have = {x[1] for x in skills}
+    for key in (career.get("skills") or {}):
+        if key in pin_skills and key not in have:
+            skills.append((LEVEL["strong"], key, career["skills"][key]))
 
     cert_cap = caps.get("certifications", base_def.get("max_certs", 4))
     certs = []
@@ -356,6 +365,9 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
     certs.sort(key=lambda x: (x[1].get("year") or ""), reverse=True)
     certs.sort(key=lambda x: (-x[0], -int(x[1].get("strength", 2))))
     certs = [c for _, c in certs[:cert_cap]]
+    have = {c.get("id") for c in certs}
+    certs += [c for c in career.get("certifications", [])
+              if c.get("id") in pin_certs and c.get("id") not in have]
 
     lead_in_jobs = sum(1 for j in jobs for b in j["bullets"]
                        if lead in (b.get("threads") or []))

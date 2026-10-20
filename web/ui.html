@@ -416,7 +416,7 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
     <button class="alt" id="bSave">Save</button>
     <button class="go" id="bFinalize">Finalize CV</button>
   </div>
-  <div id="bflash" class="flash"></div>
+  <div id="bflash2" class="flash"></div>
   <div class="bwrap">
     <div>
       <div class="card">
@@ -1699,16 +1699,16 @@ async function openBuild(id, fresh){
   $('#topbarTitle').textContent = 'Build CV';
   $('#topbarSub').textContent = 'Two bases, thread dials, a live preview';
   $('#bResult').style.display = 'none';
-  $('#bflash').className = 'flash';
+  $('#bflash2').className = 'flash';
   $('#bTitle').textContent = 'Loading...';
   const r = await post('/api/build/state', {id, fresh: !!fresh});
-  if (!r.ok){ flash('#bflash', r.err || 'could not open the builder', false); return; }
+  if (!r.ok){ flash('#bflash2', r.err || 'could not open the builder', false); return; }
   B = r; B.id = id; BSPEC = JSON.parse(JSON.stringify(r.spec));
   B.letter = r.letter || null;
   $('#bLetterOut').style.display = 'none'; $('#bLetterPdf').style.display = 'none';
   $('#bTitle').textContent = r.company + ' — ' + (r.spec.headline || r.role);
-  if (r.posting_note) flash('#bflash', 'No posting text: ' + r.posting_note + ' Suggestions fall back to defaults.', false);
-  else if (r.saved) flash('#bflash', 'Your saved setup for this application. Re-suggest starts over from the posting.', true);
+  if (r.posting_note) flash('#bflash2', 'No posting text: ' + r.posting_note + ' Suggestions fall back to defaults.', false);
+  else if (r.saved) flash('#bflash2', 'Your saved setup for this application. Re-suggest starts over from the posting.', true);
   renderBuild();
   syncSummaryBox();
   schedulePreview(0);
@@ -1726,13 +1726,13 @@ function setDial(tid, level){
       const strong = Object.values(d).filter(v => v === 'strong').length;
       d[k] = strong < B.max_strong ? 'strong' : 'light'; }});
   } else if (d[tid] === 'lead'){
-    flash('#bflash', 'Pick another thread as Lead first: every CV needs exactly one.', false);
+    flash('#bflash2', 'Pick another thread as Lead first: every CV needs exactly one.', false);
     return;
   }
   if (level === 'strong' && d[tid] !== 'strong'){
     const strong = Object.values(d).filter(v => v === 'strong').length;
     if (strong >= B.max_strong){
-      flash('#bflash', 'At most ' + B.max_strong + ' threads can be Strong. Turning everything up is ' +
+      flash('#bflash2', 'At most ' + B.max_strong + ' threads can be Strong. Turning everything up is ' +
             'what makes a CV read as unfocused: set one of the others to Light first.', false);
       return;
     }
@@ -1788,11 +1788,11 @@ async function switchBase(base){
   // Re-suggest the dials and language for the new base from the posting; keep
   // their bullet choices, the headline and nothing else from the old base.
   const r = await post('/api/build/state', {id: B.id, fresh: true, base});
-  if (!r.ok){ flash('#bflash', r.err || 'could not switch base', false); return; }
+  if (!r.ok){ flash('#bflash2', r.err || 'could not switch base', false); return; }
   const keep = {bullets: BSPEC.bullets, headline: BSPEC.headline};
   B.suggestion = r.suggestion;
   BSPEC = Object.assign(JSON.parse(JSON.stringify(r.spec)), keep);
-  flash('#bflash', 'Switched to ' + B.bases[base].label + '. Dials re-suggested for this base; your bullet choices are kept.', true);
+  flash('#bflash2', 'Switched to ' + B.bases[base].label + '. Dials re-suggested for this base; your bullet choices are kept.', true);
   renderBuild(); schedulePreview(0);
 }
 
@@ -1858,10 +1858,10 @@ function editBullet(id){
   save.onclick = async () => {
     const text = line.querySelector('textarea').value.trim();
     const r = await post('/api/build/edit', de ? {bullet:id, text_de:text} : {bullet:id, text});
-    if (!r.ok){ flash('#bflash', r.err || 'could not save', false); return; }
+    if (!r.ok){ flash('#bflash2', r.err || 'could not save', false); return; }
     if (de){ b.text_de = text; b.de_stale = false; } else { b.text = text; b.de_stale = r.de_stale; }
     line.innerHTML = '<span class="t">' + esc(text) + '</span>';
-    flash('#bflash', 'Saved to your career data.' + (r.de_stale ? ' Its German version is now marked outdated.' : ''), true);
+    flash('#bflash2', 'Saved to your career data.' + (r.de_stale ? ' Its German version is now marked outdated.' : ''), true);
     schedulePreview(0);
   };
 }
@@ -1943,12 +1943,20 @@ function renderReqs(reqs){
   $('#bReqs').innerHTML = reqs.map((q, i) =>
     '<div class="req"><span class="pill '+tone[q.status]+'">'+word[q.status]+'</span><div>'+esc(q.text)
     + (q.note ? '<div class="muted small">'+esc(q.note)+'</div>' : '')
-    + (q.status === 'available' && (q.bullets||[]).length
-        ? ' <button class="alt" style="padding:2px 8px;font-size:11.5px" data-add="'+i+'">Add</button>' : '')
+    + (q.status === 'available' && ((q.bullets||[]).length || (q.skills||[]).length || (q.certs||[]).length)
+        ? ' <button class="alt" style="padding:2px 8px;font-size:11.5px" data-add="'+i+'" title="Adds '
+          +(q.bullets||[]).length+' bullet(s), '+(q.skills||[]).length+' skill group(s), '
+          +(q.certs||[]).length+' certification(s) to this CV">Add</button>' : '')
     + '</div></div>').join('');
   $('#bReqs').querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
-    BSPEC.bullets = BSPEC.bullets || {};
-    reqs[+b.dataset.add].bullets.forEach(id => BSPEC.bullets[id] = true);
+    const q = reqs[+b.dataset.add];
+    BSPEC.bullets = BSPEC.bullets || {}; BSPEC.skills = BSPEC.skills || {}; BSPEC.certs = BSPEC.certs || {};
+    (q.bullets||[]).forEach(id => BSPEC.bullets[id] = true);
+    (q.skills||[]).forEach(k => BSPEC.skills[k] = true);
+    (q.certs||[]).forEach(k => BSPEC.certs[k] = true);
+    const n = (q.bullets||[]).length, s = (q.skills||[]).length, c = (q.certs||[]).length;
+    flash('#bflash2', 'Added ' + [n && n+' bullet'+(n>1?'s':''), s && s+' skill group'+(s>1?'s':''),
+      c && c+' certification'+(c>1?'s':'')].filter(Boolean).join(', ') + '.', true);
     schedulePreview(0);
   });
 }
@@ -1969,13 +1977,13 @@ $('#bBack').onclick = () => { showTab('pipe'); if (B) showDetail(B.id); };
 $('#bResuggest').onclick = () => { if (B && confirm('Start over from the suggestion? Your changes to this application are dropped (star and wording edits stay).')) openBuild(B.id, true); };
 $('#bSave').onclick = async () => {
   const r = await post('/api/build/save', {id: B.id, spec: BSPEC});
-  flash('#bflash', r.ok ? 'Saved for this application.' : (r.problems || [r.err]).join(' '), r.ok);
+  flash('#bflash2', r.ok ? 'Saved for this application.' : (r.problems || [r.err]).join(' '), r.ok);
 };
 $('#bPresetSave').onclick = async () => {
   const name = prompt('Name this preset (e.g. "Electronics retail"):');
   if (!name) return;
   const r = await post('/api/build/preset', {name, spec: BSPEC});
-  if (r.ok){ B.presets = r.presets; renderBuild(); flash('#bflash', 'Preset saved.', true); }
+  if (r.ok){ B.presets = r.presets; renderBuild(); flash('#bflash2', 'Preset saved.', true); }
 };
 $('#bPreset').onchange = async () => {
   const name = $('#bPreset').value; if (!name) return;
@@ -1983,7 +1991,7 @@ $('#bPreset').onchange = async () => {
   if (!r.ok) return;
   Object.assign(BSPEC, {base: r.preset.base, lang: r.preset.lang, dials: r.preset.dials});
   renderBuild(); schedulePreview(0);
-  flash('#bflash', 'Preset "' + name + '" applied. Your bullet choices are unchanged.', true);
+  flash('#bflash2', 'Preset "' + name + '" applied. Your bullet choices are unchanged.', true);
 };
 $('#bFinalize').onclick = async () => {
   const btn = $('#bFinalize'); btn.disabled = true; btn.textContent = 'Building PDF...';
@@ -1998,7 +2006,7 @@ $('#bFinalize').onclick = async () => {
     + ((r.notes || []).join('; ')) + '\n\n' + (r.ats || r.err || '');
   if (r.pdf){ $('#bOpenPdf').style.display=''; $('#bOpenPdf').onclick = () => post('/api/open', {path: r.pdf}); }
   else $('#bOpenPdf').style.display = 'none';
-  flash('#bflash', r.ok ? 'CV finalized and saved.' + (r.desktop_copy ? ' Copied to your send folder.' : '')
+  flash('#bflash2', r.ok ? 'CV finalized and saved.' + (r.desktop_copy ? ' Copied to your send folder.' : '')
                         : 'The CV was built but a check failed, so it was not copied to your send folder or logged as sent. See below the preview.', r.ok);
 };
 
@@ -2013,7 +2021,7 @@ $('#bSummaryDraft').onclick = async () => {
   const btn = $('#bSummaryDraft'); btn.disabled = true; btn.textContent = 'Drafting (about 30 s)...';
   const r = await post('/api/build/summary', {id: B.id, spec: BSPEC});
   btn.disabled = false; btn.textContent = 'Draft with AI';
-  if (!r.ok){ flash('#bflash', r.err || 'could not draft', false); return; }
+  if (!r.ok){ flash('#bflash2', r.err || 'could not draft', false); return; }
   $('#bSummary').value = r.text; BSPEC.summary = r.text;
   BSPEC.summary_accepted = false; $('#bSummaryOk').checked = false;
   const fails = (r.findings || []).filter(f => f.level === 'FAIL');
@@ -2036,13 +2044,13 @@ async function letterCall(draft){
   B.letter = r.letter; B.slug = r.slug || B.slug;
   out.textContent = (r.scaffold_written ? '' : 'A drafted letter already exists, so the template was not rewritten.\n\n')
     + ((r.out || '') + (r.err ? '\n' + r.err : '')).trim() || (r.ok ? 'Template written: ' + r.letter : 'Failed.');
-  flash('#bflash', r.ok ? (draft ? 'Letter drafted and checked. Read it, then Render letter.' : 'Letter template ready. Open letter.md to write it.')
+  flash('#bflash2', r.ok ? (draft ? 'Letter drafted and checked. Read it, then Render letter.' : 'Letter template ready. Open letter.md to write it.')
                         : (r.err || 'The draft needs attention: see the Letter card.'), r.ok);
 }
 $('#bLetterDraft').onclick = () => letterCall(true);
 $('#bLetterScaffold').onclick = () => letterCall(false);
 $('#bLetterOpen').onclick = () => {
-  if (!B.letter){ flash('#bflash', 'No letter yet. Draft it or make the template first.', false); return; }
+  if (!B.letter){ flash('#bflash2', 'No letter yet. Draft it or make the template first.', false); return; }
   post('/api/open', {path: B.letter});
 };
 $('#bLetterRender').onclick = async () => {
@@ -2053,7 +2061,7 @@ $('#bLetterRender').onclick = async () => {
       ? r.voice.map(f => f.level + '  line ' + f.line + '  ' + f.rule).join('\n')
       : ((r.out || '') + (r.err || '')).trim();
   if (r.pdf){ $('#bLetterPdf').style.display = ''; $('#bLetterPdf').onclick = () => post('/api/open', {path: r.pdf}); }
-  flash('#bflash', r.ok ? 'Letter rendered.' : (r.err || 'The letter needs attention.'), r.ok);
+  flash('#bflash2', r.ok ? 'Letter rendered.' : (r.err || 'The letter needs attention.'), r.ok);
 };
 
 $('#bFit').onclick = async () => {
@@ -2066,7 +2074,7 @@ $('#bFit').onclick = async () => {
       .concat((a.honest_bridges || []).map(x => 'bridge: ' + (x.requirement || '') + ' <- ' + (x.bridge || '')),
               (a.gaps || []).map(g => 'gap: ' + (g.requirement || g)))
       .join('\n') : ((r.out || '') + (r.err || '')).trim();
-  flash('#bflash', r.ok ? 'Fit analysis saved. Draft letter with AI will use it.' : 'Fit analysis failed.', r.ok);
+  flash('#bflash2', r.ok ? 'Fit analysis saved. Draft letter with AI will use it.' : 'Fit analysis failed.', r.ok);
 };
 $('#bPackage').onclick = async () => {
   const btn = $('#bPackage'); btn.disabled = true; btn.textContent = 'Packaging...';
@@ -2077,7 +2085,7 @@ $('#bPackage').onclick = async () => {
   out.textContent = (r.problems || []).map(p => 'REFUSED  ' + p)
     .concat((r.warnings || []).map(w => 'warning  ' + w), (r.files || []).map(f => 'ready    ' + f))
     .join('\n') || r.err || '';
-  flash('#bflash', r.ok ? 'Packaged. Files are in the submit folder' + (SETTINGS && SETTINGS.send_folder ? ', and copied to your send folder.' : '.') : 'Not packaged. See the reasons under Send.', r.ok);
+  flash('#bflash2', r.ok ? 'Packaged. Files are in the submit folder' + (SETTINGS && SETTINGS.send_folder ? ', and copied to your send folder.' : '.') : 'Not packaged. See the reasons under Send.', r.ok);
   if (r.dir){ $('#bOpenSubmit').style.display = ''; $('#bOpenSubmit').onclick = () => post('/api/open', {path: r.dir}); }
 };
 $('#bMarkSent').onclick = async () => {
@@ -2087,7 +2095,7 @@ $('#bMarkSent').onclick = async () => {
   await post('/api/pipeline/log', {id: B.id, text: 'Sent: ' + BSPEC.base + ' base, Lead '
     + (lead ? lead.label : '?') + ', ' + (BSPEC.lang || 'en').toUpperCase() + ' CV'
     + (B.letter ? ' and letter.' : '.')});
-  flash('#bflash', 'Marked as sent. Today will remind you to follow up in a week.', true);
+  flash('#bflash2', 'Marked as sent. Today will remind you to follow up in a week.', true);
   loadPipe(); loadToday(); loadStatus();
 };
 
@@ -2129,7 +2137,7 @@ function renderUntranslated(ids){
     const r = await post('/api/build/translate', {bullets: ids});
     delete box.dataset.busy;
     if (!r.ok){ btn.disabled = false; btn.textContent = 'Propose German for all';
-                flash('#bflash', r.err || 'could not translate', false); return; }
+                flash('#bflash2', r.err || 'could not translate', false); return; }
     (r.items || []).forEach(it => {
       const line = document.querySelector('.bline[data-b="' + it.id + '"]');
       if (!line) return;
@@ -2155,11 +2163,11 @@ function showProposal(line, b, text, findings){
   save.onclick = async () => {
     const text_de = txt.querySelector('textarea').value.trim();
     const s2 = await post('/api/build/edit', {bullet: b.id, text_de});
-    if (!s2.ok){ flash('#bflash', s2.err || 'could not save', false); return; }
+    if (!s2.ok){ flash('#bflash2', s2.err || 'could not save', false); return; }
     b.text_de = text_de; b.de_stale = false;
     txt.innerHTML = '<span class="t">' + esc(text_de) + '</span> <span class="pill ok">German saved</span>';
     const tr = line.querySelector('[data-tr]'); if (tr) tr.remove();
-    flash('#bflash', 'German version saved.', true); schedulePreview(0);
+    flash('#bflash2', 'German version saved.', true); schedulePreview(0);
   };
 }
 
@@ -2176,7 +2184,7 @@ function addTranslateButtons(){
       btn.textContent = 'Translating...';
       const r = await post('/api/build/translate', {bullet: b.id});
       btn.textContent = 'Translate';
-      if (!r.ok){ flash('#bflash', r.err || 'could not translate', false); return; }
+      if (!r.ok){ flash('#bflash2', r.err || 'could not translate', false); return; }
       showProposal(line, b, r.text, r.findings);
     };
     line.appendChild(btn);
@@ -2187,7 +2195,7 @@ function addTranslateButtons(){
 // drafted, rendered letter. Everything still goes through every check.
 async function deadlineMode(id){
   await openBuild(id);
-  flash('#bflash', 'Deadline mode: finalizing the CV, then drafting and rendering the letter...', true);
+  flash('#bflash2', 'Deadline mode: finalizing the CV, then drafting and rendering the letter...', true);
   $('#bFinalize').click();
   while ($('#bFinalize').disabled) await new Promise(r => setTimeout(r, 800));
   await letterCall(true);
