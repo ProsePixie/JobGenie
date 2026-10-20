@@ -98,10 +98,11 @@ def degree_status(line, education):
 
 
 # "Previous teaching, training, mentoring or instructional experience is strongly
-# preferred" came back as a gap for a man with 22 years of teaching, because the
-# matcher counts shared words and "mentoring", "instructional" and "strongly" are
-# not in his CV. Experience of teaching or training is a capability, not a
-# keyword: it is covered whenever the CV shows teaching or enablement work.
+# preferred" came back as a gap for a candidate with many years of teaching,
+# because the matcher counts shared words and "mentoring", "instructional" and
+# "strongly" are not in the CV. Experience of teaching or training is a
+# capability, not a keyword: it is covered whenever the CV shows teaching or
+# enablement work.
 TEACHING_REQ = re.compile(
     r"\b(teaching|training|mentoring|instruct\w*|coaching|facilitat\w*|trainer|"
     r"schulung\w*|unterricht\w*|dozent\w*|lehr\w*)\b", re.I)

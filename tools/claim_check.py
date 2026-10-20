@@ -147,14 +147,13 @@ NUMBER_RE = re.compile(r"\$\s?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*(?:\.\d+)?%|\b\d{2,}\
 
 
 
-# A sentence saying he LACKS something. A letter drafted for a cybersecurity
-# trainer role said "SOC and SIEM operations, threat intelligence and ethical
-# hacking are not part of my background yet" about a man who had trained on
-# Trend Micro Vision One, XDR included (2026-10-05). Nothing in career.json said
-# so; the drafter read "not in the data" as "he does not have it". Hard rule 2
-# was only ever checked in one direction, so a false denial passed everything.
-# Absence from the data is not absence of experience: such a sentence is allowed
-# only for a gap he has confirmed (career.json confirmed_gaps).
+# A sentence saying the candidate LACKS something. A drafted letter told an
+# employer that a required skill was "not part of my background yet" although
+# nothing in career.json said so: the drafter read "not in the data" as "does not
+# have it". The no-fabrication rule was only ever checked in one direction, so a
+# false denial passed every check. Absence from the data is not absence of
+# experience: such a sentence is allowed only for a gap the user has confirmed
+# (career.json confirmed_gaps).
 DENIAL_RES = [re.compile(x, re.I) for x in [
     r"\bnot (?:yet )?(?:a )?(?:part|within|in)\b[^.]{0,12}\bmy (?:background|experience|skill ?set|work)\b",
     r"\b(?:no|little|limited|lack of|without any) (?:prior |direct |formal |hands-on |practical |professional |real |much )?(?:experience|exposure|background|knowledge)\b",

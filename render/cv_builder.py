@@ -263,8 +263,8 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
             elif level == LEVEL["light"]:
                 pool.append((b, False))
         pool.sort(key=lambda x: (not x[1], -bullet_value(x[0], role, spec, prefer, terms)))
-        # A role may set its own cap (`bullet_cap`): the CD store is the main
-        # retail evidence on the Service CV, and a 1996 job gets one bullet by age.
+        # A role may set its own cap (`bullet_cap`): an old job can be the main
+        # evidence for one base (retail, say) and would otherwise get one bullet by age.
         cap = role.get("bullet_cap") or recency_cap(role, caps.get("recency", base))
         if cap == 0 and any(lead in (b.get("threads") or []) for b, _ in pool):
             cap = 1

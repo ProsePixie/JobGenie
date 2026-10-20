@@ -190,8 +190,8 @@ def build_prompt(letter_path, posting_path, dossier_path, fit_path=None, cv_path
         "deny it; if the posting asks for one of those, leave it out.",
         "NEVER write that he lacks, has not done, has no experience of, or is still "
         "learning something. Not being in career.json is not the same as him not "
-        "having it (a draft told an employer SOC and SIEM were 'not part of my "
-        "background yet' about a man who had trained on Trend Micro Vision One). Say "
+        "having it (a draft told an employer a required skill was 'not part of my "
+        "background yet' when the data simply never mentioned it). Say "
         "only what the data supports, and leave the rest unsaid. The one exception is "
         "a gap listed under 'Confirmed gaps' in the notes block: that may be stated "
         "once, plainly, if it is central. A check refuses any other statement of a lack.",
