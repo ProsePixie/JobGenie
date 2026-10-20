@@ -1939,7 +1939,7 @@ function markSixSecond(doc){
 function renderReqs(reqs){
   if (!reqs.length){ $('#bReqs').innerHTML = '<p class="muted small">No requirement lines found in the posting.</p>'; return; }
   const tone = {covered:'ok', available:'warn', gap:'bad', personal:''};
-  const word = {covered:'covered', available:'in your data', gap:'gap', personal:'personal'};
+  const word = {covered:'covered', available:'in your data', gap:'not in your data', personal:'personal'};
   $('#bReqs').innerHTML = reqs.map((q, i) =>
     '<div class="req"><span class="pill '+tone[q.status]+'">'+word[q.status]+'</span><div>'+esc(q.text)
     + (q.note ? '<div class="muted small">'+esc(q.note)+'</div>' : '')

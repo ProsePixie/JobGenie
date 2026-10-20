@@ -2695,7 +2695,11 @@ def build_letter_scaffold(entry, spec, ctx, B, posting):
         "Lead angle: %s - %s" % (lead["label"], lead["description"]),
         "Supporting: %s" % (", ".join(t["label"] for t in strong) or "none"),
         "Never use: %s" % ", ".join(avoid),
-        "Gaps to leave out or state plainly, never paper over: %s" % ("; ".join(gaps) or "none"),
+        "Not found in the data (leave these out of the letter; never say he lacks or has "
+        "not done them, because the data being silent is not the same as him not having "
+        "the experience): %s" % ("; ".join(gaps) or "none"),
+        "Confirmed gaps he may state, plainly and once, if central: %s"
+        % ("; ".join(g.get("text", "") for g in ctx["career"].get("confirmed_gaps") or []) or "none"),
         "Evidence the CV shows (draw from these, do not restate them):",
     ] + evidence[:24] + ["-->"])
     return ("---\ncompany: %s\nrole: %s\nrecipient: TODO the contact person the posting "

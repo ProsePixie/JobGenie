@@ -97,6 +97,16 @@ def degree_status(line, education):
     return "gap", "no degree in education"
 
 
+# "Previous teaching, training, mentoring or instructional experience is strongly
+# preferred" came back as a gap for a man with 22 years of teaching, because the
+# matcher counts shared words and "mentoring", "instructional" and "strongly" are
+# not in his CV. Experience of teaching or training is a capability, not a
+# keyword: it is covered whenever the CV shows teaching or enablement work.
+TEACHING_REQ = re.compile(
+    r"\b(teaching|training|mentoring|instruct\w*|coaching|facilitat\w*|trainer|"
+    r"schulung\w*|unterricht\w*|dozent\w*|lehr\w*)\b", re.I)
+EXPERIENCE_WORD = re.compile(r"\b(experience|erfahrung|background)\b", re.I)
+
 PERSONAL = re.compile(
     r"\b(motivat\w*|zuverl(ä|ae|a)ss\w*|reliab\w*|teamplayer|team player|teamf(ä|ae|a)hig\w*|"
     r"begeister\w*|leidenschaft\w*|passion\w*|interesse\b|neugier\w*|curious|curiosity|"
@@ -282,6 +292,8 @@ def requirements(posting, spec, ctx, limit=8):
     if not lines:
         return []
     p = B.plan(spec, ctx)
+    teaches = any(t in ("enablement", "svc-teaching") for g in (p["jobs"], p["projects"])
+                  for x in g for b in x["bullets"] for t in b.get("threads") or [])
     shown = " ".join(b.get("text", "") + " " + (b.get("text_de") or "")
                      for g in (p["jobs"], p["projects"]) for x in g for b in x["bullets"])
     shown += " " + " ".join(" ".join(c.get("items", []) + (c.get("items_de") or []))
@@ -321,6 +333,10 @@ def requirements(posting, spec, ctx, limit=8):
         if deg and len(line) < 220:
             out.append({"text": line, "status": deg[0], "matched": [], "bullets": [],
                         "note": deg[1]})
+            continue
+        if teaches and TEACHING_REQ.search(line) and EXPERIENCE_WORD.search(line):
+            out.append({"text": line, "status": "covered", "matched": [], "bullets": [],
+                        "note": "Teaching and training work is on this CV."})
             continue
         if PERSONAL.search(line) and len(line) < 140:
             out.append({"text": line, "status": "personal", "matched": [], "bullets": [],

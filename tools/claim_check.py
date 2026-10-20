@@ -147,6 +147,46 @@ NUMBER_RE = re.compile(r"\$\s?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*(?:\.\d+)?%|\b\d{2,}\
 
 
 
+# A sentence saying he LACKS something. A letter drafted for a cybersecurity
+# trainer role said "SOC and SIEM operations, threat intelligence and ethical
+# hacking are not part of my background yet" about a man who had trained on
+# Trend Micro Vision One, XDR included (2026-10-05). Nothing in career.json said
+# so; the drafter read "not in the data" as "he does not have it". Hard rule 2
+# was only ever checked in one direction, so a false denial passed everything.
+# Absence from the data is not absence of experience: such a sentence is allowed
+# only for a gap he has confirmed (career.json confirmed_gaps).
+DENIAL_RES = [re.compile(x, re.I) for x in [
+    r"\bnot (?:yet )?(?:a )?(?:part|within|in)\b[^.]{0,12}\bmy (?:background|experience|skill ?set|work)\b",
+    r"\b(?:no|little|limited|lack of|without any) (?:prior |direct |formal |hands-on |practical |professional |real |much )?(?:experience|exposure|background|knowledge)\b",
+    r"\bI (?:do not|don't|have not|haven't|have never|never|lack)\b[^.]{0,60}\b(?:experience|worked|used|done|held|managed|run|operated)\b",
+    r"\bnot yet\b", r"\b(?:still|am) (?:new to|learning|developing)\b",
+    r"\boutside (?:of )?my (?:experience|background|expertise)\b",
+    # German
+    r"\bkeine?[nrms]? (?:direkte[nr]? |praktische[nr]? |formale[nr]? |berufliche[nr]? )?(?:Erfahrung|Kenntnisse|Berufserfahrung)",
+    r"\bnicht (?:Teil|Bestandteil) meine[rs]? (?:Erfahrung|Hintergrund|Laufbahn|Werdegang)",
+    r"\bnoch nicht\b", r"\bfehlt mir\b", r"\bhabe ich (?:noch )?(?:nicht|nie|keine)\b",
+]]
+SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
+
+
+def confirmed_gap_terms():
+    """Lower-case phrases that mark a gap he has confirmed (career.json
+    confirmed_gaps[].terms). A sentence naming one may say he lacks it."""
+    out = []
+    for g in (load_json(CAREER).get("confirmed_gaps") or []):
+        out += [str(t).lower() for t in g.get("terms") or []]
+    return out
+
+
+def denials(line):
+    """Sentences in a line that state a lack, with the pattern that matched."""
+    found = []
+    for sentence in SENTENCE_RE.split(line):
+        if any(r.search(sentence) for r in DENIAL_RES):
+            found.append(sentence.strip())
+    return found
+
+
 COMMENT_BLOCK = re.compile(r"<!--.*?-->", re.S)
 
 
@@ -164,6 +204,7 @@ def scan(text, company):
     corpus = source_text()
     banned = banned_phrases()
     others = company_names(company)
+    gap_terms = confirmed_gap_terms()
 
     def note(level, rule, i, excerpt):
         findings.append({"level": level, "rule": rule, "line": i,
@@ -195,6 +236,12 @@ def scan(text, company):
             if not re.search(r"(?<![\w-])%s(?![\w-])" % re.escape(word), corpus, re.IGNORECASE):
                 note("WARN", "scope word %r is not in career.json or evidence.json - "
                      "check it is literally true" % m.group(1), i, line)
+
+        for sentence in denials(line):
+            if not any(t in sentence.lower() for t in gap_terms):
+                note("FAIL", "says he lacks something, and it is not a confirmed gap "
+                     "(career.json confirmed_gaps): not being in the data is not the "
+                     "same as not having done it", i, sentence)
 
         for m in NUMBER_RE.finditer(line):
             token = m.group().strip()

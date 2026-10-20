@@ -163,7 +163,7 @@ def build_prompt(letter_path, posting_path, dossier_path, fit_path=None, cv_path
             "real experience into this posting's language - prefer these framings "
             "over inventing your own where a TODO line covers the same ground. Its "
             "gaps are requirements with no honest mapping - leave those out of the "
-            "letter entirely." % fit_path.relative_to(ROOT))
+            "letter entirely, and do not say he lacks them." % fit_path.relative_to(ROOT))
     lines += [
         "",
         "Replace each line in %s that starts with TODO with real content, but only "
@@ -185,9 +185,16 @@ def build_prompt(letter_path, posting_path, dossier_path, fit_path=None, cv_path
         "American spelling in English, dates as day month year.",
         "Write as the candidate, never about the drafting. Do not mention the data "
         "files, the rules, or that something will not be invented ('so I will not "
-        "invent any' reached a draft). State a gap in one plain clause and move on. "
+        "invent any' reached a draft). "
         "Never name anything from career.json's _do_not_reintroduce list, even to "
-        "deny it; if the posting asks for one of those, treat it as a gap.",
+        "deny it; if the posting asks for one of those, leave it out.",
+        "NEVER write that he lacks, has not done, has no experience of, or is still "
+        "learning something. Not being in career.json is not the same as him not "
+        "having it (a draft told an employer SOC and SIEM were 'not part of my "
+        "background yet' about a man who had trained on Trend Micro Vision One). Say "
+        "only what the data supports, and leave the rest unsaid. The one exception is "
+        "a gap listed under 'Confirmed gaps' in the notes block: that may be stated "
+        "once, plainly, if it is central. A check refuses any other statement of a lack.",
         "Never raise the scope of a fact. Do not add 'sole', 'only', 'entire', 'led', "
         "'managed' or their German equivalents ('alleinig', 'einzig', 'gesamt', "
         "'leitete', 'verantwortete') unless career.json says exactly that. "
@@ -201,8 +208,7 @@ def build_prompt(letter_path, posting_path, dossier_path, fit_path=None, cv_path
         "letter. If leaving requirements out leaves fewer than two bullets, write "
         "the strongest real matches from the CV instead, in the posting's terms "
         "only where the work truly was that (writing-style.md's terminology test). "
-        "If a gap is central to the role, it may be stated once in one plain "
-        "clause with the nearest real experience; never invent a bridge.",
+        "Never invent a bridge to a requirement the data does not support: leave it out.",
         "Do not write or edit any file; you cannot, and this script saves the "
         "result. Answer with the complete new contents of %s and nothing else: "
         "the frontmatter between its --- lines and the body. Leave out the HTML "
