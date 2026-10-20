@@ -138,6 +138,14 @@ section { break-inside: auto; }
   color: #33475b;
 }
 
+.entry-context {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 8.8pt;
+  font-style: italic;
+  color: #5a6570;
+  margin: 1pt 0 2pt 0;
+}
+
 .entry-meta {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 8.8pt;

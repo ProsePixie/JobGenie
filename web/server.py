@@ -2305,7 +2305,8 @@ def _roles_for_panel(ctx, plan, lang):
                          "de_stale": bool(b.get("text_de_stale")),
                          "threads": b.get("threads") or [], "star": bool(b.get("star")),
                          "shown": b["id"] in shown}
-                        for b in role.get("bullets", []) if b.get("id")],
+                        for b in role.get("bullets", [])
+                        if b.get("id") and not R.is_todo(b.get("text"))],
         })
     return out
 

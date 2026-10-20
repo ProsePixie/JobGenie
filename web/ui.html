@@ -437,6 +437,10 @@ details summary { cursor:pointer; color:var(--blue); font-size:13px; }
         <div class="row" id="bPhotoRow" style="display:none"><div>
           <label style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
           <input type="checkbox" id="bPhoto" style="width:auto"> Include photo (Service only)</label></div></div>
+        <div class="row"><div>
+          <label style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
+          <input type="checkbox" id="bContext" style="width:auto"> One line under each job saying what the company was</label>
+          <p class="hint" style="margin:2px 0 0 22px">English CVs only. It costs a line per job, so a long CV may lose a bullet to fit.</p></div></div>
         <div class="row r2"><div><label>Preset</label><select id="bPreset"></select></div>
           <div style="display:flex;gap:6px;align-items:flex-end">
             <button class="alt" id="bPresetSave">Save as preset</button></div></div>
@@ -1780,6 +1784,7 @@ function renderBuild(){
   $('#bHeadline').value = BSPEC.headline || '';
   $('#bPhotoRow').style.display = (B.bases[BSPEC.base].photo_allowed && B.photo_available) ? '' : 'none';
   $('#bPhoto').checked = !!BSPEC.photo;
+  $('#bContext').checked = !!BSPEC.context_lines;
   $('#bPagesSel').value = String((BSPEC.advanced || {}).max_pages || '');
   $('#bPreset').innerHTML = '<option value="">Load a preset...</option>'
     + (B.presets||[]).map(n => '<option>'+esc(n)+'</option>').join('');
@@ -1883,6 +1888,7 @@ function editBullet(id){
 function schedulePreview(delay){
   BSPEC.headline = $('#bHeadline').value;
   BSPEC.photo = $('#bPhoto').checked;
+  BSPEC.context_lines = $('#bContext').checked;
   clearTimeout(BTIMER);
   BTIMER = setTimeout(runPreview, delay === undefined ? 350 : delay);
 }
@@ -1977,6 +1983,7 @@ function renderReqs(reqs){
 
 $('#bHeadline').addEventListener('input', () => schedulePreview());
 $('#bPhoto').onchange = () => schedulePreview(0);
+$('#bContext').onchange = () => schedulePreview(0);
 $('#bPagesSel').onchange = () => {
   BSPEC.advanced = BSPEC.advanced || {};
   const v = $('#bPagesSel').value;

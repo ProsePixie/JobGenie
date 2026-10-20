@@ -265,6 +265,7 @@ def check_substance(text, pdf_path, findings):
         # Either spelling counts: a German CV prints org_de where one exists.
         missing = [r.get("org", r.get("id")) for r in roles
                    if r.get("org_type") not in PROJECT_ORG_TYPES and r.get("org")
+                   and not r.get("only_base")        # optional by definition: one base's CV only
                    and not any(" ".join(n.split()) in flat
                                for n in (r["org"], r.get("org_de") or "") if n)]
         if missing:

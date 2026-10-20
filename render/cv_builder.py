@@ -79,7 +79,10 @@ def default_spec(base="professional", lang=None, lead=None, dials=None, ctx=None
         dials[lead] = "lead"
     return {"base": base, "lang": lang or base_def["lang"], "dials": dials,
             "bullets": {}, "headline": "", "summary": "", "summary_accepted": False,
-            "photo": False, "sections": {}, "advanced": {}}
+            "photo": False, "sections": {}, "advanced": {},
+            # The role's one-line description under its title (career.json
+            # `context`). A spec saved before it existed has no value and gets none.
+            "context_lines": True}
 
 
 def validate(spec, ctx):
@@ -260,7 +263,9 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
             elif level == LEVEL["light"]:
                 pool.append((b, False))
         pool.sort(key=lambda x: (not x[1], -bullet_value(x[0], role, spec, prefer, terms)))
-        cap = recency_cap(role, caps.get("recency", base))
+        # A role may set its own cap (`bullet_cap`): the CD store is the main
+        # retail evidence on the Service CV, and a 1996 job gets one bullet by age.
+        cap = role.get("bullet_cap") or recency_cap(role, caps.get("recency", base))
         if cap == 0 and any(lead in (b.get("threads") or []) for b, _ in pool):
             cap = 1
         chosen, facts = [], set()
@@ -295,6 +300,11 @@ def plan(spec, ctx, trimmed=frozenset(), caps_override=None, prefer=()):
     roles = sorted(career.get("roles", []), key=R.sort_key, reverse=True)
     jobs, projects, earlier = [], [], []
     for role in roles:
+        # A role that belongs to one base only (the night-manager job at a CD
+        # store is for the Service CV, and would be a one-line row on a
+        # Professional one).
+        if role.get("only_base") and role["only_base"] != base:
+            continue
         if role.get("org_type") in R.PROJECT_ORG_TYPES:
             if role.get("project_tier") == "earlier":
                 earlier.append(role)
@@ -488,7 +498,7 @@ def project_html(role, bullets, lang, omissions):
     return "\n".join(out)
 
 
-def entry_html(role, bullets, lang, omissions):
+def entry_html(role, bullets, lang, omissions, context=False):
     meta_bits = [R.date_range(role, lang)]
     loc = R.location_text(role, lang)
     if loc:
@@ -511,7 +521,13 @@ def entry_html(role, bullets, lang, omissions):
     stacked = " stacked" if plain > 92 else ""
     out = ['<div class="entry">', '  <div class="entry-head%s">' % stacked,
            '    <p class="entry-title">%s</p>' % title,
-           '    <p class="entry-meta">%s</p>' % meta, '  </div>', '  <ul>']
+           '    <p class="entry-meta">%s</p>' % meta, '  </div>']
+    # English only: there is no reviewed German line, and an English sentence
+    # on a German CV is the thing the builder otherwise refuses to do.
+    line = (role.get("context") or "").strip()
+    if context and lang != "de" and line and not R.is_todo(line):
+        out.append('  <p class="entry-context">%s</p>' % R.e(line))
+    out.append('  <ul>')
     for b in bullets:
         out.append('    <li data-bullet="%s">%s</li>'
                    % (R.e(b["id"]), R.keep_compounds(R.e(R.bullet_text(b, lang, omissions)))))
@@ -577,7 +593,8 @@ def body_html(spec, ctx, p, omissions):
     sections = {
         "summary": R.build_section(L["summary"], summary),
         "roles": R.build_section(L["roles"], "\n".join(
-            entry_html(j["role"], j["bullets"], lang, omissions) for j in p["jobs"])),
+            entry_html(j["role"], j["bullets"], lang, omissions,
+                       context=bool(spec.get("context_lines"))) for j in p["jobs"])),
         "projects": R.build_section(L["projects"], projects),
         "skills": R.build_section(L["skills"], skills_html(p["skills"], lang, omissions)),
         "certifications": R.build_section(L["certifications"],
