@@ -998,6 +998,106 @@ def api_pipeline_report_wrong(body):
 # API
 # --------------------------------------------------------------------------
 
+# ---- the funnel (Sankey) ----------------------------------------------------
+
+# Outcomes that mean an employer answered, or the application ended after it was
+# sent. A card with one of these counts as sent even when `applied` was never
+# ticked, and the diagram says so rather than hiding it.
+RESPONSE_OUTCOMES = {"rejected-auto", "rejected-screen", "rejected-interview", "ghosted",
+                     "screen", "interview", "offer", "withdrawn", "advanced-to-final"}
+SENT_STAGES = ("sent", "responded", "interviewing")
+TALK_OUTCOMES = {"screen", "interview", "advanced-to-final", "rejected-interview", "offer"}
+
+# id: (label, column in the applied-only view, tone)
+FUNNEL_NODES = {
+    "all":      ("All cards", 0, "start"),
+    "skipped":  ("Skipped or closed without applying", 1, "mute"),
+    "working":  ("Still being evaluated", 1, "mute"),
+    "prepared": ("Prepared, not sent yet", 1, "mute"),
+    "sent":     ("Applications sent", 0, "start"),
+    "wait":     ("Waiting, no answer yet", 1, "wait"),
+    "replied":  ("Replied, no interview yet", 1, "good"),
+    "ghosted":  ("No response (ghosted)", 1, "bad"),
+    "auto":     ("Automatic rejection", 1, "bad"),
+    "screenrej": ("Rejected at screening", 1, "bad"),
+    "talk":     ("Reached an interview or screen", 1, "good"),
+    "withdrawn": ("Withdrawn", 1, "mute"),
+    "other":    ("Other, not recorded", 1, "mute"),
+    "inproc":   ("Still in process", 2, "good"),
+    "intrej":   ("Rejected after interview", 2, "bad"),
+    "offer":    ("Offer", 2, "good"),
+}
+FUNNEL_ORDER = list(FUNNEL_NODES)
+
+
+def _funnel_path(e, whole):
+    """The nodes one card passes through, in order."""
+    outcome = (e.get("outcome") or "").lower().strip()
+    stage = (e.get("stage") or "").lower().strip()
+    sent = (e.get("applied") is True or stage in SENT_STAGES or outcome in RESPONSE_OUTCOMES)
+    head = ["all", "sent"] if whole else ["sent"]
+    if not sent:
+        if outcome in TERMINAL or stage == "closed":
+            return ["all", "skipped"]
+        if stage == "drafted":
+            return ["all", "prepared"]
+        return ["all", "working"]
+    if outcome in TALK_OUTCOMES or stage == "interviewing":
+        end = {"rejected-interview": "intrej", "offer": "offer"}.get(outcome, "inproc")
+        return head + ["talk", end]
+    simple = {"ghosted": "ghosted", "rejected-auto": "auto", "rejected-screen": "screenrej",
+              "withdrawn": "withdrawn"}
+    if outcome in simple:
+        return head + [simple[outcome]]
+    if stage == "responded":
+        return head + ["replied"]
+    if outcome in ("pending", "") and stage in ("sent", "responded", "interviewing") or e.get("applied") is True:
+        return head + ["wait"]
+    return head + ["other"]
+
+
+def funnel(entries, mode="applied"):
+    """Nodes and flows for the Sankey, counted from the pipeline at the moment of
+    asking. Every flow out of a node adds up to the node: nothing is estimated."""
+    whole = mode == "all"
+    members, links = {}, {}
+    unflagged = 0
+    for e in entries:
+        path = _funnel_path(e, whole)
+        if not whole and path[0] != "sent":
+            continue
+        if "sent" in path and e.get("applied") is not True:
+            unflagged += 1
+        card = {"company": e.get("company", ""), "role": e.get("role", ""),
+                "outcome": e.get("outcome", ""), "stage": e.get("stage", "")}
+        for node in path:
+            members.setdefault(node, []).append(card)
+        for a, b in zip(path, path[1:]):
+            links[(a, b)] = links.get((a, b), 0) + 1
+    nodes = []
+    for nid in FUNNEL_ORDER:
+        if nid not in members:
+            continue
+        label, col, tone = FUNNEL_NODES[nid]
+        if whole:
+            col = {"all": 0, "skipped": 1, "working": 1, "prepared": 1, "sent": 1}.get(nid, col + 1)
+        nodes.append({"id": nid, "label": label, "col": col, "tone": tone,
+                      "count": len(members[nid]), "cards": members[nid]})
+    notes = []
+    if unflagged:
+        notes.append("%d card%s with a recorded answer %s not ticked as applied; counted as sent."
+                     % (unflagged, "" if unflagged == 1 else "s", "is" if unflagged == 1 else "are"))
+    return {"ok": True, "mode": "all" if whole else "applied",
+            "total": len(members.get("all" if whole else "sent", [])), "nodes": nodes,
+            "links": [{"source": a, "target": b, "value": v} for (a, b), v in links.items()],
+            "notes": notes}
+
+
+def api_funnel(query=None):
+    mode = ((query or {}).get("mode") or ["applied"])[0]
+    return funnel(load_pipeline(), "all" if mode == "all" else "applied")
+
+
 def api_claude_auth():
     """Whether the Claude sign-in the AI features use is still alive."""
     sys.path.insert(0, str(ROOT / "tools"))
@@ -1653,7 +1753,27 @@ def api_sources(query=None):
             "recent": recent}
 
 
+def recent_roles(limit=40):
+    """The roles most recently recorded by any check, scheduled or manual, that
+    have no card yet. The scheduled daily check records what it finds as "seen"
+    without showing it, so a manual check straight after reported "nothing new"
+    while a dozen roles from that morning sat unseen (2026-10-12)."""
+    pool = [s for s in load_jsonl(DATA / "jobs-seen.jsonl") if s.get("company")][-limit:]
+    pool.reverse()
+    entries = load_pipeline()
+
+    def key(text):
+        return re.sub(r"[^a-z0-9]+", "", (text or "").lower())
+
+    have = {(key(e.get("company")), key(e.get("role"))) for e in entries}
+    fresh = [h for h in pool if (key(h.get("company")), key(h.get("title"))) not in have]
+    return {"ok": True, "checked": 0, "new": fresh, "errors": [], "recent": True,
+            "already_in_pipeline": len(pool) - len(fresh)}
+
+
 def api_sources_run(body):
+    if body.get("recent"):
+        return recent_roles()
     cmd = [PY, "tools/watch_ats.py", "--run", "--json"]
     show_all = bool(body.get("all"))
     if show_all:
@@ -2763,6 +2883,7 @@ def api_build_letter(body):
 
 ROUTES_GET = {
     "/api/status": api_status,
+    "/api/funnel": api_funnel,
     "/api/claude-auth": api_claude_auth,
     "/api/watchlist": api_watchlist,
     "/api/career": api_career,
