@@ -1,5 +1,5 @@
 {
-  "_doc": "FICTIONAL example candidate. Replace with your own via the /setup skill (see docs/SETUP.md). Every bullet needs threads, or it never renders.",
+  "_doc": "FICTIONAL example candidate. Replace with your own via the /setup skill (see docs/SETUP.md). Every bullet needs threads, or it never renders. Optional: a role's `context` prints under its title on English CVs; `only_base` limits a role to one CV base; `bullet_cap` sets its own bullet count; `confirmed_gaps` lists the only lacks a letter may state.",
   "identity": {
     "_tier": "public",
     "name": "Jane Doe",
@@ -81,7 +81,8 @@
           ],
           "strength": 2
         }
-      ]
+      ],
+      "context": "Example one-line description of what the company is, printed under the job title."
     },
     {
       "id": "globex",
@@ -214,6 +215,16 @@
       "language": "English",
       "level": "Native",
       "working": true
+    }
+  ],
+  "confirmed_gaps": [
+    {
+      "id": "example-gap",
+      "text": "Example: professional experience with a tool the user has never used.",
+      "terms": [
+        "example tool"
+      ],
+      "source": "the user's own statement"
     }
   ]
 }

@@ -412,7 +412,7 @@ US_STATE_RE = re.compile(
 LOC_REMOTE = ["remote", "home office", "hybrid", "flexible", "distributed"]
 
 # "Remote-Missouri", "Remote-Jakarta", "Remote - Sao Paulo", "Remote-Washington,
-# D.C." (UiPath, 2026-10-12) all passed as bare "remote" because the word is in
+# D.C." (real postings, 2026-10-12) all passed as bare "remote" because the word is in
 # the string. A place named right after "remote" is where the role sits, so it
 # is rejected unless the word after it only describes the arrangement.
 REMOTE_PLACE_RE = re.compile(r"\bremote\s*[-:,/(\u2013]\s*([a-z\u00e0-\u00ff]+)")
@@ -492,11 +492,10 @@ def classify_location(loc):
         return "wide"
     # A place named right after "remote" ("Remote-Jakarta", "Remote - Sao Paulo") is
     # where the role sits. Home and wide places were handled above, so what is left
-    # is somewhere out of reach, unless the home market is the US and the place is
-    # a state.
+    # is somewhere out of reach. Not for a US home market: there the places are
+    # US states, which this cannot tell from anywhere else by name.
     place = REMOTE_PLACE_RE.search(low)
-    if (place and place.group(1) not in REMOTE_BENIGN
-            and not (MARKET["us_home"] and US_STATE_RE.search(low))):
+    if place and place.group(1) not in REMOTE_BENIGN and not MARKET["us_home"]:
         return "reject"
     if any(k in low for k in LOC_REMOTE):
         return "remote"

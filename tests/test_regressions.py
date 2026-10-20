@@ -20,6 +20,8 @@ for sub in ("web", "tools", "render"):
     sys.path.insert(0, str(ROOT / sub))
 
 import careerdata  # noqa: E402
+import cv_builder  # noqa: E402
+import claim_check  # noqa: E402
 import draft_letter  # noqa: E402
 import fetch_posting  # noqa: E402
 import leak_check  # noqa: E402
@@ -47,11 +49,17 @@ class Location(unittest.TestCase):
         "Munich, Germany": "home", "Berlin": "home", "Frankfurt am Main, DE": "home",
         "Remote - Europe or US": "wide", "EMEA": "wide", "Global": "wide",
         "Remote": "remote", "": "unclear",
+        # A place named right after "remote" is where the role sits ...
+        "Remote-Jakarta": "reject", "Remote-Missouri": "reject", "Remote-Sao Paulo": "reject",
+        # ... but a word that only describes the arrangement is not a place.
+        "Remote (Hybrid)": "remote", "Remote - Flexible": "remote", "Remote, Global": "wide",
     }
     CASES_US = {
         "Austin, TX": "home", "Remote - US": "home", "Springfield, IL": "home",
         "Munich, Germany": "reject", "Remote - EMEA": "reject", "London, UK": "reject",
         "North America (remote)": "wide", "Remote": "remote",
+        # The new rule is for markets outside the US; arrangement words still pass.
+        "Remote (Hybrid)": "remote",
     }
 
     def check(self, market, cases):
@@ -636,6 +644,331 @@ class SendFolder(unittest.TestCase):
                 server.api_settings_send_folder({"send_folder": ""})
                 self.assertIsNone(server.send_folder())
 
+
+class FalseDenials(unittest.TestCase):
+    """A drafted letter told an employer that SOC and SIEM were 'not part of my
+    background yet', about a candidate whose data never mentioned either (2026-10-05).
+    Nothing in the data said he lacked them; the drafter read silence as absence.
+    A statement of a lack is allowed only for a gap he has confirmed."""
+
+    def setUp(self):
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        root = Path(d.name)
+        (root / "career.json").write_text(json.dumps({
+            "roles": [], "skills": {},
+            "confirmed_gaps": [{"id": "de", "text": "Written German", "terms": ["written german"]}],
+        }), encoding="utf-8")
+        (root / "watchlist.json").write_text(json.dumps({"categories": {}}), encoding="utf-8")
+        self.enterContext(mock.patch.object(claim_check, "CAREER", root / "career.json"))
+        self.enterContext(mock.patch.object(claim_check, "WATCHLIST", root / "watchlist.json"))
+        self.enterContext(mock.patch.object(claim_check, "EVIDENCE", root / "missing.json"))
+
+    def fails(self, text):
+        return [f for f in claim_check.scan(text, "Acme") if f["level"] == "FAIL"]
+
+    def test_the_real_sentence_is_refused(self):
+        self.assertTrue(self.fails("SOC and SIEM operations, threat intelligence and ethical "
+                                   "hacking are not part of my background yet."))
+
+    def test_other_ways_of_saying_it_are_refused(self):
+        for text in ("I have no experience with Kubernetes.", "I am still learning Linux.",
+                     "That is outside my experience.", "Ich habe keine Erfahrung mit SIEM.",
+                     "Das kann ich noch nicht."):
+            self.assertTrue(self.fails(text), text)
+
+    def test_a_confirmed_gap_may_be_stated(self):
+        self.assertFalse(self.fails("My written German needs translation support, so I have no "
+                                    "experience drafting contracts in written German."))
+
+    def test_ordinary_sentences_pass(self):
+        for text in ("At Acme I wrote and voiced two animated training series.",
+                     "The app runs with no server and no account.",
+                     "Nothing typed into it is ever sent anywhere."):
+            self.assertFalse(self.fails(text), text)
+
+    def test_teaching_experience_is_not_reported_as_a_gap(self):
+        ctx = cv_builder.load_context()
+        spec = cv_builder.default_spec("professional", lead="enablement", ctx=ctx)
+        posting = ("Requirements\nPrevious teaching, training, mentoring or instructional "
+                   "experience is strongly preferred.\n")
+        rows = cv_suggest.requirements(posting, spec, ctx)
+        self.assertEqual([r["status"] for r in rows], ["covered"])
+
+
+class AddButton(unittest.TestCase):
+    """The Build panel's Add button used to tick bullets only, offered ones already
+    on the CV, and ranked by role order. It now pins bullets, skill groups and
+    certifications, and ranks by how much of the requirement each carries
+    (2026-10-07)."""
+
+    def setUp(self):
+        self.ctx = cv_builder.load_context()
+        self.spec = cv_builder.default_spec("professional", lead="enablement", ctx=self.ctx)
+
+    def test_a_skill_group_can_be_pinned(self):
+        self.ctx["career"]["skills"]["zz_unthreaded"] = {"label": "Test group", "items": ["a test item"], "threads": []}
+        shown = {k for _, k, _ in cv_builder.plan(self.spec, self.ctx)["skills"]}
+        self.assertNotIn("zz_unthreaded", shown)
+        spec = dict(self.spec, skills={"zz_unthreaded": True})
+        self.assertIn("zz_unthreaded", {k for _, k, _ in cv_builder.plan(spec, self.ctx)["skills"]})
+
+    def test_a_certification_can_be_pinned(self):
+        self.ctx["career"].setdefault("certifications", []).append(
+            {"id": "zz-test-cert", "name": "Test certification", "issuer": "Test", "year": "2020", "threads": []})
+        shown = {c.get("id") for c in cv_builder.plan(self.spec, self.ctx)["certs"]}
+        self.assertNotIn("zz-test-cert", shown)
+        spec = dict(self.spec, certs={"zz-test-cert": True})
+        self.assertIn("zz-test-cert", {c.get("id") for c in cv_builder.plan(spec, self.ctx)["certs"]})
+
+    def test_nothing_pinned_changes_nothing(self):
+        a = cv_builder.plan(self.spec, self.ctx)
+        b = cv_builder.plan(dict(self.spec, skills={}, certs={}), self.ctx)
+        self.assertEqual([k for _, k, _ in a["skills"]], [k for _, k, _ in b["skills"]])
+        self.assertEqual([c.get("id") for c in a["certs"]], [c.get("id") for c in b["certs"]])
+
+    def test_candidates_are_never_already_on_the_cv(self):
+        p = cv_builder.plan(self.spec, self.ctx)
+        shown = {b["id"] for g in (p["jobs"], p["projects"]) for x in g for b in x["bullets"]}
+        posting = ("Requirements\nExperience with encryption, data loss prevention and "
+                   "network security training.\nCreating video and animation content for "
+                   "learners.\n")
+        for r in cv_suggest.requirements(posting, self.spec, self.ctx):
+            if r["status"] != "available":
+                continue
+            self.assertIn("skills", r)
+            self.assertIn("certs", r)
+            self.assertFalse(shown & set(r["bullets"]), r["text"])
+
+
+class ContextLineAndWithdrawn(unittest.TestCase):
+    """A role's one-line description prints under its title; a withdrawn bullet
+    (text is a TODO marker) never shows in the Build panel list (2026-10-08)."""
+
+    def setUp(self):
+        self.ctx = cv_builder.load_context()
+
+    def html(self, lang="en", **kw):
+        spec = cv_builder.default_spec("professional", lead="enablement", ctx=self.ctx)
+        spec["lang"] = lang
+        spec.update(kw)
+        p = cv_builder.plan(spec, self.ctx)
+        return cv_builder.body_html(spec, self.ctx, p, render.Omissions())
+
+    def with_context(self):
+        for r in self.ctx["career"]["roles"]:
+            if r.get("org_type") not in ("independent", "product") and r.get("bullets"):
+                r["context"] = "A test company description."
+                return r
+
+    def test_context_line_prints_when_on(self):
+        self.with_context()
+        self.assertIn("A test company description.", self.html(context_lines=True))
+
+    def test_context_line_off_and_old_specs_get_none(self):
+        self.with_context()
+        self.assertNotIn("A test company description.", self.html(context_lines=False))
+        spec = cv_builder.default_spec("professional", lead="enablement", ctx=self.ctx)
+        del spec["context_lines"]
+        p = cv_builder.plan(spec, self.ctx)
+        self.assertNotIn("A test company description.",
+                         cv_builder.body_html(spec, self.ctx, p, render.Omissions()))
+
+    def test_no_context_line_on_a_german_cv(self):
+        self.with_context()
+        self.assertNotIn("A test company description.", self.html(lang="de", context_lines=True))
+
+    def test_withdrawn_bullets_are_not_listed_in_the_panel(self):
+        import server
+        spec = cv_builder.default_spec("professional", lead="enablement", ctx=self.ctx)
+        role = next(r for r in self.ctx["career"]["roles"] if r.get("bullets"))
+        role["bullets"].append({"id": "withdrawn-x", "text": "TODO (withdrawn)", "threads": []})
+        listed = [b["id"] for r in server._roles_for_panel(self.ctx, cv_builder.plan(spec, self.ctx), "en")
+                  for b in r["bullets"]]
+        self.assertNotIn("withdrawn-x", listed)
+
+
+class OnlyBaseRole(unittest.TestCase):
+    """A role marked only_base appears on that base's CV and on no other
+    (2026-10-08: a retail job is for the Service CV)."""
+
+    def test_role_appears_only_on_its_base(self):
+        ctx = cv_builder.load_context()
+        ctx["career"]["roles"].append({
+            "id": "only-service", "title": "Night manager", "org": "Test Store", "org_type": "retail",
+            "start": "1996", "end": "1998", "only_base": "service",
+            "bullets": [{"id": "only-service-1", "text": "Closed the store.", "threads": ["svc-retail"], "strength": 3,
+                         "text_de": "Den Laden geschlossen."}]})
+        def jobs(base, lead):
+            spec = cv_builder.default_spec(base, lead=lead, ctx=ctx)
+            return {j["role"]["id"] for j in cv_builder.plan(spec, ctx)["jobs"]}
+        self.assertIn("only-service", jobs("service", "svc-retail"))
+        self.assertNotIn("only-service", jobs("professional", "enablement"))
+
+
+class SignInMessage(unittest.TestCase):
+    """An expired Claude login stopped summaries and letters with a raw OAuth
+    error (2026-10-19). The one failure he can fix himself is said in plain words."""
+
+    def test_expired_login_is_explained(self):
+        import claude_run
+        for raw in ("Failed to authenticate: OAuth session expired and could not be refreshed",
+                    "Not logged in. Please run /login"):
+            self.assertEqual(claude_run.explain(raw), claude_run.SIGN_IN_AGAIN)
+        self.assertIn("/login", claude_run.SIGN_IN_AGAIN)
+
+    def test_other_errors_pass_through(self):
+        import claude_run
+        self.assertEqual(claude_run.explain("the AI request did not finish within 240 seconds"),
+                         "the AI request did not finish within 240 seconds")
+
+
+class SignInCheckAndAutoBuild(unittest.TestCase):
+    """The app checks the Claude sign-in before he clicks, and Package builds a
+    CV that was never finalized (2026-10-19)."""
+
+    def test_logged_in_reads_the_status(self):
+        import claude_run
+        fake = mock.Mock(stdout=json.dumps({"loggedIn": False}), returncode=0)
+        with mock.patch.object(claude_run, "find_claude", return_value="claude"), \
+             mock.patch.object(claude_run.subprocess, "run", return_value=fake):
+            self.assertEqual(claude_run.logged_in(), (False, ""))
+        fake.stdout = json.dumps({"loggedIn": True})
+        with mock.patch.object(claude_run, "find_claude", return_value="claude"), \
+             mock.patch.object(claude_run.subprocess, "run", return_value=fake):
+            self.assertEqual(claude_run.logged_in(), (True, ""))
+
+    def test_logged_in_is_unknown_without_the_cli(self):
+        import claude_run
+        with mock.patch.object(claude_run, "find_claude", return_value=None):
+            self.assertIsNone(claude_run.logged_in()[0])
+
+    def test_endpoint_says_sign_in_again(self):
+        import server, claude_run
+        with mock.patch.object(claude_run, "logged_in", return_value=(False, "")):
+            out = server.api_claude_auth()
+        self.assertFalse(out["logged_in"])
+        self.assertIn("/login", out["message"])
+
+    def test_package_builds_a_missing_cv_first(self):
+        import server, package
+        with tempfile.TemporaryDirectory() as d:
+            apps = Path(d)
+            (apps / "acme-role").mkdir()
+            (apps / "acme-role" / "build.json").write_text(json.dumps({"base": "professional"}), encoding="utf-8")
+            calls = []
+
+            def build(slug, merge=False):
+                calls.append("package")
+                if len(calls) == 1:
+                    return [], ["no CV PDF in the folder. Build or render it first."], []
+                return [Path("x.pdf")], [], []
+
+            with mock.patch.object(server, "APPS", apps), \
+                 mock.patch.object(server, "load_pipeline", return_value=[{"id": "acme--role"}]), \
+                 mock.patch.object(server, "app_dir", return_value=apps / "acme-role"), \
+                 mock.patch.object(server, "api_build_finalize", side_effect=lambda b: calls.append("finalize") or {"ok": True}), \
+                 mock.patch.object(server, "promote_to_drafted", return_value=False), \
+                 mock.patch.object(server, "sync_to_desktop"), \
+                 mock.patch.object(package, "build", side_effect=build):
+                out = server.api_package({"slug": "acme-role"})
+        self.assertTrue(out["ok"], out)
+        self.assertEqual(calls, ["package", "finalize", "package"])
+
+
+class NoConsoleWindows(unittest.TestCase):
+    """The sign-in check opened a console window on every window focus, and each
+    window took focus, so command prompts opened without end (2026-10-20). Every
+    program the app starts must run without a console window."""
+
+    def test_programs_start_without_a_window(self):
+        import server, claude_run
+        seen = []
+
+        def fake_run(*a, **kw):
+            seen.append(kw.get("creationflags"))
+            return mock.Mock(stdout=json.dumps({"loggedIn": True, "result": "ok"}), stderr="", returncode=0)
+
+        with mock.patch.object(claude_run, "find_claude", return_value="claude"),              mock.patch.object(claude_run.subprocess, "run", side_effect=fake_run),              mock.patch.object(server.subprocess, "run", side_effect=fake_run):
+            claude_run.logged_in()
+            claude_run.ask("hi")
+            server.run(["echo", "x"])
+        want = getattr(__import__("subprocess"), "CREATE_NO_WINDOW", 0) if __import__("os").name == "nt" else 0
+        self.assertEqual(seen, [want, want, want])
+
+    def test_the_page_does_not_check_on_focus(self):
+        html = (ROOT / "web" / "ui.html").read_text(encoding="utf-8")
+        self.assertNotIn("addEventListener('focus', checkAuth)", html)
+
+
+class FunnelDiagram(unittest.TestCase):
+    """The application funnel is counted from the pipeline at the moment of
+    asking, and every flow out of a box adds up to the box (2026-10-20)."""
+
+    ENTRIES = [
+        {"company": "A", "role": "r", "stage": "sent", "applied": True, "outcome": "pending"},
+        {"company": "B", "role": "r", "stage": "closed", "applied": True, "outcome": "rejected-auto"},
+        {"company": "C", "role": "r", "stage": "closed", "applied": True, "outcome": "ghosted"},
+        {"company": "D", "role": "r", "stage": "closed", "applied": True, "outcome": "rejected-interview"},
+        {"company": "E", "role": "r", "stage": "interviewing", "applied": True, "outcome": "interview"},
+        {"company": "F", "role": "r", "stage": "closed", "applied": False, "outcome": "skipped"},
+        {"company": "G", "role": "r", "stage": "scored", "applied": False, "outcome": "pending"},
+        {"company": "H", "role": "r", "stage": "drafted", "applied": False, "outcome": "pending"},
+        {"company": "I", "role": "r", "stage": "closed", "applied": False, "outcome": "rejected-screen"},
+    ]
+
+    def counts(self, d):
+        return {n["id"]: n["count"] for n in d["nodes"]}
+
+    def test_applied_view_counts_only_sent(self):
+        import server
+        d = server.funnel(self.ENTRIES, "applied")
+        c = self.counts(d)
+        self.assertEqual(d["total"], 6)          # A, B, C, D, E and I (a recorded answer)
+        self.assertEqual(c["talk"], 2)
+        self.assertEqual((c["intrej"], c["inproc"]), (1, 1))
+        self.assertEqual((c["ghosted"], c["auto"], c["wait"], c["screenrej"]), (1, 1, 1, 1))
+        self.assertNotIn("skipped", c)
+
+    def test_every_flow_adds_up(self):
+        import server
+        for mode in ("applied", "all"):
+            d = server.funnel(self.ENTRIES, mode)
+            c = self.counts(d)
+            for n in d["nodes"]:
+                out = sum(l["value"] for l in d["links"] if l["source"] == n["id"])
+                if out:
+                    self.assertEqual(out, c[n["id"]], (mode, n["id"]))
+
+    def test_whole_pipeline_view_and_note(self):
+        import server
+        d = server.funnel(self.ENTRIES, "all")
+        c = self.counts(d)
+        self.assertEqual(d["total"], 9)
+        self.assertEqual((c["skipped"], c["working"], c["prepared"], c["sent"]), (1, 1, 1, 6))
+        self.assertTrue(any("not ticked as applied" in n for n in d["notes"]))
+
+    def test_empty_pipeline(self):
+        import server
+        self.assertEqual(server.funnel([], "applied")["total"], 0)
+
+
+class RecentRoles(unittest.TestCase):
+    """"Nothing new" after the scheduled check had already taken the day's roles
+    hid a dozen of them; the latest recorded roles are one click away
+    (2026-10-12)."""
+
+    def test_latest_recorded_roles_without_a_card(self):
+        import server
+        seen = [{"company": "A", "title": "One", "url": "u1"},
+                {"company": "B", "title": "Two", "url": "u2"},
+                {"company": "C", "title": "Three", "url": "u3"}]
+        with mock.patch.object(server, "load_jsonl", return_value=seen), \
+             mock.patch.object(server, "load_pipeline", return_value=[{"company": "B", "role": "Two"}]):
+            out = server.recent_roles(limit=2)
+        self.assertTrue(out["recent"])
+        self.assertEqual([h["company"] for h in out["new"]], ["C"])   # newest first, B has a card
+        self.assertEqual(out["already_in_pipeline"], 1)
 
 if __name__ == "__main__":
     unittest.main()
