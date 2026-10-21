@@ -1,6 +1,6 @@
-# Copilot instructions for JobGenie
+# Copilot instructions for the Evidence-Bound Job Application System
 
-JobGenie is a local job-search system: structured career data in `profile/`, CVs and
+The Evidence-Bound Job Application System is a local job-search system: structured career data in `profile/`, CVs and
 letters rendered from it, a local web UI (`web/server.py`), and Claude Code skills in
 `.claude/skills/`. `CLAUDE.md` is the full rulebook; this file is the short version.
 When the two disagree, `CLAUDE.md` wins.

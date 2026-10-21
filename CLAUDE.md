@@ -1,6 +1,6 @@
 # Job Search System — Operating Rules
 
-JobGenie is a personal job search and application system that runs locally with Claude Code. Structured career data is the
+The Evidence-Bound Job Application System is a personal job search and application system that runs locally with Claude Code. Structured career data is the
 source of truth; every document is a build artifact rendered from it.
 
 **First run:** if `profile/` does not exist, or `profile/career.json` still describes

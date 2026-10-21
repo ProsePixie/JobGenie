@@ -1,4 +1,4 @@
-# Setting up JobGenie
+# Setting up the Evidence-Bound Job Application System
 
 ## 1. Install the tools
 

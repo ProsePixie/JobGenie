@@ -27,7 +27,7 @@ location classifier for both a US and a German user.
 1. **`/setup` with a real CV**: the skill and its tools (`doctor`, `new_profile`,
    `import_cv`, `import_linkedin`, `careerdata add`) are built and tested end to end with a
    fictional CV; it needs a run with a real person's CV and their feedback.
-2. **Other CV languages** ([#5](https://github.com/ProsePixie/JobGenie/issues/5)).
+2. **Other CV languages** ([#5](https://github.com/ProsePixie/evidence-bound-job-application-system/issues/5)).
 3. **More job sources.** Greenhouse, Lever, Ashby, SmartRecruiters, Workable and the
    Bundesagentur are supported; national boards elsewhere are not.
 

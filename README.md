@@ -1,9 +1,9 @@
-# JobGenie
+# Evidence-Bound Job Application System
 
-[![tests](https://github.com/ProsePixie/JobGenie/actions/workflows/tests.yml/badge.svg)](https://github.com/ProsePixie/JobGenie/actions/workflows/tests.yml)
+[![tests](https://github.com/ProsePixie/evidence-bound-job-application-system/actions/workflows/tests.yml/badge.svg)](https://github.com/ProsePixie/evidence-bound-job-application-system/actions/workflows/tests.yml)
 
 A local job-search system run with [Claude Code](https://claude.com/claude-code). You keep
-your career as structured data. JobGenie finds and screens postings, says how qualified you
+your career as structured data. This project finds and screens postings, says how qualified you
 are for each one, builds a tailored CV and cover letter, checks them the way an applicant
 tracking system reads them, and packages what you send. It will not invent a single claim.
 
@@ -18,7 +18,7 @@ went wrong without it.
 ## Why it exists
 
 Most "AI CV" tools rewrite you until you sound like the posting. That gets interviews you
-cannot survive. JobGenie is built the other way round:
+cannot survive. This project is built the other way round:
 
 1. **Nothing is invented.** Every line on a CV or letter traces to your own data or to
    something you confirmed. A requirement you do not meet is left out or stated plainly,
@@ -36,7 +36,7 @@ cannot survive. JobGenie is built the other way round:
 
 Built for people in the EU or the Americas applying to roles in English. Output - CV,
 letter, form answers - always stays in the language(s) you set in `profile/market.json`
-(English by default); JobGenie does not translate your CV into the employer's language,
+(English by default); this project does not translate your CV into the employer's language,
 and does not assume you need it to.
 
 If you run into a posting in a language you don't read, you have two options: ask your
@@ -82,7 +82,7 @@ And a readable log of everything the app did:
 Needs Python 3.10+, Chrome or Edge, and poppler (`pdftotext`; `pdfunite` only for a merged PDF). No pip installs.
 
 ```bash
-git clone https://github.com/ProsePixie/JobGenie && cd JobGenie
+git clone https://github.com/ProsePixie/evidence-bound-job-application-system && cd evidence-bound-job-application-system
 python3 tools/doctor.py                # checks Chrome, poppler and Python, says how to fix
 cp -r profile.example profile          # the fictional Jane Doe, to try it
 python3 web/server.py                  # opens the app at http://127.0.0.1:8777

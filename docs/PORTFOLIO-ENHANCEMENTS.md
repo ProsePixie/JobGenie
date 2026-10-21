@@ -150,7 +150,7 @@ Pseudocode for a new GitHub Actions step:
 Once the workflow exists, add to README:
 
 ```markdown
-[![Sample CV builds](https://github.com/ProsePixie/JobGenie/actions/workflows/render-sample.yml/badge.svg)](https://github.com/ProsePixie/JobGenie/actions/workflows/render-sample.yml)
+[![Sample CV builds](https://github.com/ProsePixie/evidence-bound-job-application-system/actions/workflows/render-sample.yml/badge.svg)](https://github.com/ProsePixie/evidence-bound-job-application-system/actions/workflows/render-sample.yml)
 ```
 
 **Implementer decision:** Add CI rendering artifact? Yes / No / Defer
@@ -278,7 +278,7 @@ Address these questions honestly:
 
 I spent [time period] applying for jobs and found that...
 [specific problem]. Most tools either [problem A] or [problem B], 
-so I built JobGenie to [your approach].
+so I built this project to [your approach].
 
 What surprised me: [one insight from building it].
 
@@ -396,20 +396,20 @@ that title-only matches were weaker fits than posting-body matches."]
 
 ### What it is
 
-A brief table comparing JobGenie to existing CV tools, builders, and ATS simulators.
+A brief table comparing this project to existing CV tools, builders, and ATS simulators.
 
 ### Why it matters
 
 - Shows you understand the competitive landscape.
 - Demonstrates confidence in your approach without being defensive.
-- Helps viewers understand what makes JobGenie different.
+- Helps viewers understand what makes this project different.
 
 ### Suggested format
 
 ```markdown
-## How JobGenie is different
+## How this project is different
 
-| | JobGenie | Generic AI CV Tool | CV Builder | ATS Checker |
+| | This project | Generic AI CV Tool | CV Builder | ATS Checker |
 |---|---|---|---|---|
 | Prevents AI from rewriting you without permission | ✓ | ✗ | ✓ | ✗ |
 | Runs entirely locally | ✓ | ✗ | ✓ | Varies |
@@ -524,4 +524,4 @@ These enhancements are **all optional**. The core specification in `PORTFOLIO-IM
 
 **Implement what resonates with you and what aligns with your time and goals. The implementer (human or AI) has complete discretion.**
 
-If you choose to pursue any of these, they should be done with the same care and honesty that underpins JobGenie itself: no invented claims, no exaggeration, no features that don't actually exist.
+If you choose to pursue any of these, they should be done with the same care and honesty that underpins this project itself: no invented claims, no exaggeration, no features that don't actually exist.

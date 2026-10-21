@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that everything JobGenie needs is installed, and say how to fix what is not.
+"""Check that everything this project needs is installed, and say how to fix what is not.
 
     python3 tools/doctor.py
 

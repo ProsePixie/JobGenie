@@ -2,9 +2,9 @@
 
 > **Purpose:** This document is an implementation brief for Claude Code. Read it from top to bottom, inspect the repository before editing, then implement the changes in the order specified below.
 >
-> **Repository:** `ProsePixie/JobGenie`
+> **Repository:** `ProsePixie/evidence-bound-job-application-system`
 >
-> **Important:** This is a portfolio-documentation and onboarding improvement project. Do not change JobGenie's core privacy, sourcing, scoring, rendering, or Claude-safety rules unless a task below explicitly requires it. Do not add third-party Python dependencies.
+> **Important:** This is a portfolio-documentation and onboarding improvement project. Do not change this project's core privacy, sourcing, scoring, rendering, or Claude-safety rules unless a task below explicitly requires it. Do not add third-party Python dependencies.
 
 ---
 
@@ -57,10 +57,10 @@ Write a concise but technically meaningful architecture document aimed at a hiri
 Use this title:
 
 ```markdown
-# JobGenie Architecture
+# Architecture
 ```
 
-Open with a short paragraph explaining that JobGenie is a local, data-first job-search system. State that it renders application artifacts from structured career data instead of allowing an AI model to rewrite a person without traceability.
+Open with a short paragraph explaining that this project is a local, data-first job-search system. State that it renders application artifacts from structured career data instead of allowing an AI model to rewrite a person without traceability.
 
 ### Required sections
 
@@ -214,13 +214,13 @@ End with a short “Further reading” list linking to `CLAUDE.md`, `.github/cop
 
 ## 3. Create `CONTRIBUTING.md`
 
-Write a welcoming, practical contribution guide. It must be safe for both a person using JobGenie privately and a developer submitting a public change.
+Write a welcoming, practical contribution guide. It must be safe for both a person using this project privately and a developer submitting a public change.
 
 ### Required sections
 
 Use these sections:
 
-1. `# Contributing to JobGenie`
+1. `# Contributing`
 2. `## Before you start`
 3. `## Development setup`
 4. `## Running checks`
